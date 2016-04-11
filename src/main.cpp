@@ -29,7 +29,7 @@ void writeImage(string povfile)
 {
     int ndx = povfile.find_last_of("/");
     string image = povfile.substr(ndx, povfile.length());
-    image = "../images" + image.substr(0, image.find(".")) + ".tga";
+    image = "images" + image.substr(0, image.find(".")) + ".tga";
 
     window->genImage(image);
 }
@@ -47,11 +47,8 @@ int main(int argc, char **argv)
 
     window = make_shared<Window>(width, height);
     scene = make_shared<Scene>();
-
+    
     bool success = Parse::parse(file);
-
-    // camera->print();
-    // scene->printObjects();
 
     if (success) {
     
@@ -59,6 +56,8 @@ int main(int argc, char **argv)
 
         writeImage("../images/" + string(argv[3]));
     }
+
+    cout << endl;
 
     return 0;
 }

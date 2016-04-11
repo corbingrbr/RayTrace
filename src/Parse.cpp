@@ -35,6 +35,9 @@ bool Parse::parse(char *file)
         return false;
     }
     
+    cout << endl;
+    cout << "Parsing ... "; 
+    
     while (1) {
 
         nextLine();
@@ -60,6 +63,8 @@ bool Parse::parse(char *file)
         
     }
     
+    cout << "Done" << endl;
+
     return true;
 }
 

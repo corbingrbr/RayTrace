@@ -1,0 +1,8 @@
+Name: Corbin Gruber
+
+All components should operate properly.
+
+Execution: ./raytrace width height resources/file.pov
+
+Images appear under "images" directory.
+

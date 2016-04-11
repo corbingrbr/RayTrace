@@ -25,8 +25,7 @@ Camera::~Camera()
 
 void Camera::castRays(shared_ptr<Window> window, shared_ptr<Scene> scene)
 {
-    cout << endl << endl;
-    cout << "Casting rays ... " << endl;
+    cout << "Casting rays ... ";
     
     shared_ptr<Object> object;
 
@@ -41,6 +40,8 @@ void Camera::castRays(shared_ptr<Window> window, shared_ptr<Scene> scene)
             
         }
     }
+
+    cout << "Done" << endl;
 }
 
 void Camera::unitTests(shared_ptr<Window> window, shared_ptr<Scene> scene) 

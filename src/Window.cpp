@@ -1,6 +1,7 @@
 #include "Window.h"
 #include <string>
 #include <cstring>
+#include <iostream>
 
 using namespace Eigen;
 using namespace std;
@@ -34,6 +35,7 @@ void Window::setPixel(int i, int j, Vector3f color)
 
 void Window::genImage(string outfile)
 {
+ 
     FILE *fp = fopen(outfile.c_str(), "w");
     
     if (fp == NULL)
@@ -41,7 +43,9 @@ void Window::genImage(string outfile)
         perror("ERROR: Image::WriteTga() failed to open file for writing!\n");
         exit(EXIT_FAILURE);
     }
-    
+ 
+    cout << "Writing image ... ";
+   
     // write 24-bit uncompressed targa header
     // thanks to Paul Bourke (http://local.wasp.uwa.edu.au/~pbourke/dataformats/tga/)
     putc(0, fp);
@@ -93,4 +97,6 @@ void Window::genImage(string outfile)
     }
 
     fclose(fp);
+
+    cout << "Done" << endl;
 }
