@@ -142,9 +142,9 @@ shared_ptr<Sphere> Parse::parseSphere()
 shared_ptr<Plane> Parse::parsePlane()
 {
     getToken(); // {
-    Vector3f position = parseVector();
+    Vector3f normal = -parseVector();
     getToken();
-    float distance = atof(token.c_str());
+    float distance = -atof(token.c_str());
     
     nextLine();
 
@@ -153,7 +153,7 @@ shared_ptr<Plane> Parse::parsePlane()
 
     skipRest();
 
-    return make_shared<Plane>(position, distance, pigment);
+    return make_shared<Plane>(normal, distance, pigment);
 }
 
 Vector3f Parse::parseVector()

@@ -6,15 +6,15 @@
 class Plane : public Object {
 
 public:
-    Plane(Eigen::Vector3f _p, float _d, Eigen::Vector3f _color);
+    Plane(Eigen::Vector3f _normal, float _distance, Eigen::Vector3f _color);
     virtual ~Plane();
     float intersection(Eigen::Vector3f e, Eigen::Vector3f d);
     void print();
     
 private:
     
-    Eigen::Vector3f p;
-    float d;
+    Eigen::Vector3f normal;
+    float distance;
 
 };
 
