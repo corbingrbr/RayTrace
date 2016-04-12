@@ -13,6 +13,8 @@
 using namespace std;
 using namespace Eigen;
 
+#define TESTING true
+
 shared_ptr<Camera> camera;
 shared_ptr<Window> window;
 shared_ptr<Scene> scene;
@@ -20,8 +22,12 @@ shared_ptr<Scene> scene;
 // Creates image using scene and lighting
 void rayTrace()
 {
-    // camera->unitTests(window, scene);
     camera->castRays(window, scene);
+}
+
+void unitTests()
+{
+    camera->unitTests(window, scene);
 }
 
 // Writes image out
@@ -52,9 +58,13 @@ int main(int argc, char **argv)
 
     if (success) {
     
-        rayTrace();
-
-        writeImage("../images/" + string(argv[3]));
+        if (TESTING) {
+            unitTests();
+        } else {
+            rayTrace();
+            writeImage("../images/" + string(argv[3]));
+        }
+        
     }
 
     cout << endl;

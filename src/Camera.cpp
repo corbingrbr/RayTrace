@@ -48,7 +48,31 @@ void Camera::unitTests(shared_ptr<Window> window, shared_ptr<Scene> scene)
 {
     cout << endl << endl;
     cout << "Running ray tests ..." << endl;
+
+    unitTest(50, 240, window, scene);
+    unitTest(320, 50, window, scene);
+    unitTest(590, 240, window, scene);
 }
+
+void Camera::unitTest(int i, int j, shared_ptr<Window> window, shared_ptr<Scene> scene)
+{
+    Vector3f ray = calcRay(i, j, window);
+    shared_ptr<Object> object = castRay(ray, scene);
+
+    Vector3f clr;
+    
+    if (object != NULL) {
+        clr = object->getColor();
+    } else {
+        clr = Vector3f(0,0,0);
+    }
+
+    cout << "Pixel: [" << i << ", " << j << "]";
+    cout << "  Ray: {" << ray(0) << " " << ray(1) << " " << ray(2) << "}";
+    cout << "  Color: (" << clr(0) << ", " << clr(1) << ", " << clr(2) << ")" << endl;
+        
+}
+
 
 Vector3f Camera::calcRay(int i, int j, shared_ptr<Window> window)
 {
@@ -62,11 +86,6 @@ Vector3f Camera::calcRay(int i, int j, shared_ptr<Window> window)
     float vs = bottom + (top - bottom)*(j + 0.5)/window->getHeight();
 
     float ws = location(2) - 1.0;
-
-    /*cout << "us: " << us << endl;
-    cout << "vs: " << vs << endl;
-    cout << "ws: " << ws << endl;*/
-
     
     Vector3f ray = Vector3f(us, vs, ws) - location; 
     ray.normalize();

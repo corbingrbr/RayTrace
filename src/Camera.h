@@ -17,6 +17,7 @@ public:
     virtual ~Camera();
     void castRays(std::shared_ptr<Window> window, std::shared_ptr<Scene> scene);
     void unitTests(std::shared_ptr<Window> window, std::shared_ptr<Scene> scene);
+    void unitTest(int i, int j, std::shared_ptr<Window> window, std::shared_ptr<Scene> scene);
     void print();
 
 private:

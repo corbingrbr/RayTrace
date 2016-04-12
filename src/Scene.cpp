@@ -49,6 +49,9 @@ shared_ptr<Object> Scene::intersections(Vector3f p0, Vector3f d)
         }
     }
 
+    // Add hit object which holds t value
+    cout << "t: " << best << "    ";
+
     return object;
 }
 

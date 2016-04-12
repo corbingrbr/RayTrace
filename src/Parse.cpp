@@ -147,6 +147,7 @@ shared_ptr<Sphere> Parse::parseSphere()
 shared_ptr<Plane> Parse::parsePlane()
 {
     getToken(); // {
+    // Negative normal and distance !!!!
     Vector3f normal = -parseVector();
     getToken();
     float distance = -atof(token.c_str());
@@ -154,6 +155,7 @@ shared_ptr<Plane> Parse::parsePlane()
     nextLine();
 
     Vector3f pigment = parsePigment();
+    
     nextLine();
 
     skipRest();
@@ -186,8 +188,7 @@ Vector3f Parse::parsePigment()
     string s;
     
     ss >> s; // pigment
-    ss >> s; // {
-    ss >> s; // color 
+    ss >> s; // {color
     ss >> s; // rgb
     
     return parseVector(); // <color>
