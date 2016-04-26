@@ -13,7 +13,7 @@
 using namespace std;
 using namespace Eigen;
 
-#define TESTING true
+#define TESTING false
 
 shared_ptr<Camera> camera;
 shared_ptr<Window> window;
@@ -58,6 +58,8 @@ int main(int argc, char **argv)
 
     if (success) {
     
+        //scene->printObjects();
+
         if (TESTING) {
             unitTests();
         } else {

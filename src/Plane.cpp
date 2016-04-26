@@ -8,10 +8,13 @@
 using namespace std;
 using namespace Eigen;
 
-Plane::Plane(Vector3f _normal, float _distance, Vector3f _color) 
-    : Object(_color),
-      normal(_normal),
-      distance(_distance) {}
+Plane::Plane(Vector3f normal, float distance, Vector3f pigment, Vector4f finish) 
+    : Object(pigment, finish),
+      normal(normal),
+      distance(distance)
+{
+    this->position = normal*distance;
+}
 
 Plane::~Plane()
 {
@@ -33,11 +36,16 @@ float Plane::intersection(Vector3f e, Vector3f d)
     return -1.0f; 
 }
 
+Vector3f Plane::getNormal(Vector3f hitPoint) 
+{
+    return -normal.normalized();
+}
+
 void Plane::print()
 {
     cout << "<" << normal(0) << ", " << normal(1) << ", " << normal(2) << ">" << endl;
     cout << distance << endl;
-    cout << "<" << color(0) << ", " << color(1) << ", " << color(2) << ">" << endl;
-    
+    cout << "Pigment: <" << pigment(0) << ", " << pigment(1) << ", " << pigment(2) << ">" << endl;
+    cout << "Finish: <" << finish(0) << ", " << finish(1) << ", " << finish(2) << ", " << finish(3) << ">" << endl; 
 }
     

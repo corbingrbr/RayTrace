@@ -6,9 +6,10 @@
 class Plane : public Object {
 
 public:
-    Plane(Eigen::Vector3f _normal, float _distance, Eigen::Vector3f _color);
+    Plane(Eigen::Vector3f normal, float distance, Eigen::Vector3f pigment, Eigen::Vector4f finish);
     virtual ~Plane();
     float intersection(Eigen::Vector3f e, Eigen::Vector3f d);
+    Eigen::Vector3f getNormal(Eigen::Vector3f hitPoint);
     void print();
     
 private:

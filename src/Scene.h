@@ -3,10 +3,12 @@
 
 #include <vector>
 #include <memory>
+#include <utility>
 
 #include <Eigen/Dense>
 
 class Object;
+class Light;
 
 class Scene {
   
@@ -15,12 +17,15 @@ public:
     Scene();
     virtual ~Scene();
     void addObject(std::shared_ptr<Object> object);
+    void addLight(std::shared_ptr<Light> light);
+    std::shared_ptr<Light> getLight();
     void printObjects();
-    std::shared_ptr<Object> intersections(Eigen::Vector3f p0, Eigen::Vector3f d);
+    std::pair<float, std::shared_ptr<Object> > intersections(Eigen::Vector3f p0, Eigen::Vector3f d);
   
 private:
 
     std::vector<std::shared_ptr<Object> > objects;
+    std::vector<std::shared_ptr<Light> > lights;
 
 };
 

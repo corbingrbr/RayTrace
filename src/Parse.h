@@ -30,6 +30,7 @@ private:
 
     static Eigen::Vector3f parseVector();
     static Eigen::Vector3f parsePigment();
+    static Eigen::Vector4f parseFinish();
 
     static std::ifstream in;
     static std::stringstream ss;

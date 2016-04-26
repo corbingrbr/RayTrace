@@ -1,6 +1,6 @@
 Name: Corbin Gruber
 
-All components should operate properly.
+Only camera is operating properly. Shading and shadows are still in question as of the moment. 
 
 Execution: ./raytrace width height resources/file.pov
 

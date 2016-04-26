@@ -9,10 +9,12 @@
 using namespace std;
 using namespace Eigen;
 
-Sphere::Sphere(Vector3f _position, float _radius, Vector3f _color) 
-    : Object(_color),
-      position(_position), 
-      radius(_radius) {}
+Sphere::Sphere(Vector3f position, float radius, Vector3f pigment, Vector4f finish) 
+    : Object(pigment, finish),
+      radius(radius) 
+{
+    this->position = position;
+}
     
 Sphere::~Sphere()
 {
@@ -46,9 +48,16 @@ float Sphere::intersection(Vector3f e, Vector3f d)
     }  
 }
 
+Vector3f Sphere::getNormal(Eigen::Vector3f hitPoint)
+{
+    return (hitPoint - position).normalized();
+}
+
 void Sphere::print()
 {
-    cout << "<" << position(0) << ", " << position(1) << ", " << position(2) << ">" << endl;
-    cout << radius << endl;
-    cout << "<" << color(0) << ", " << color(1) << ", " << color(2) << ">" << endl;
+    cout << "-- Sphere --" << endl;
+    cout << "Location: <" << position(0) << ", " << position(1) << ", " << position(2) << ">" << endl;
+    cout << "Radius: " << radius << endl;
+    cout << "Pigment: <" << pigment(0) << ", " << pigment(1) << ", " << pigment(2) << ">" << endl;
+    cout << "Finish: <" << finish(0) << ", " << finish(1) << ", " << finish(2) << ", " << finish(3) << ">" << endl; 
 }

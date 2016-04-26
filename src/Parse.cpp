@@ -51,7 +51,7 @@ bool Parse::parse(char *file)
         getToken();
             
         if (token == "camera") { camera = parseCamera(); }
-        else if (token == "light_source") { parseLight(); }
+        else if (token == "light_source") { scene->addLight(parseLight()); }
         else if (token == "sphere") { 
             scene->addObject(parseSphere()); }
         else if (token == "plane") { scene->addObject(parsePlane()); }
@@ -123,7 +123,17 @@ shared_ptr<Camera> Parse::parseCamera()
 
 shared_ptr<Light> Parse::parseLight()
 {
-    return NULL;
+    getToken(); // Curly brace
+    Vector3f position = parseVector();
+    
+    getToken(); // color
+    getToken(); // rgb
+    
+    Vector3f color = parseVector();
+    
+    nextLine();
+    
+    return make_shared<Light>(position, color);
 }
 
 shared_ptr<Sphere> Parse::parseSphere()
@@ -139,9 +149,11 @@ shared_ptr<Sphere> Parse::parseSphere()
     Vector3f pigment = parsePigment();  
     nextLine();
 
+    Vector4f finish = parseFinish();
+
     skipRest();
     
-    return make_shared<Sphere>(position, radius, pigment);
+    return make_shared<Sphere>(position, radius, pigment, finish);
 }
 
 shared_ptr<Plane> Parse::parsePlane()
@@ -158,9 +170,11 @@ shared_ptr<Plane> Parse::parsePlane()
     
     nextLine();
 
+    Vector4f finish = parseFinish();
+    
     skipRest();
-
-    return make_shared<Plane>(normal, distance, pigment);
+   
+    return make_shared<Plane>(normal, distance, pigment, finish);
 }
 
 Vector3f Parse::parseVector()
@@ -188,8 +202,46 @@ Vector3f Parse::parsePigment()
     string s;
     
     ss >> s; // pigment
-    ss >> s; // {color
+    ss >> s; // { 
+    ss >> s; // color
     ss >> s; // rgb
     
     return parseVector(); // <color>
+}
+
+Vector4f Parse::parseFinish()
+{
+    string s;
+    float ambient = 0.0;
+    float diffuse = 0.0;
+    float specular = 0.0;
+    float roughness = 0.0;
+
+    
+    ss >> s; // finish    
+    ss >> s; // {
+   
+    ss >> s; // ambient
+    ss >> s; // val
+    ambient = atof(s.c_str());
+
+    ss >> s; // diffuse
+    ss >> s; // val
+    diffuse = atof(s.c_str());
+    
+    ss >> s; // } or specular
+    
+    if (s != "}") {
+        ss >> s;
+        specular = atof(s.c_str()); 
+    }
+
+    ss >> s;
+    
+    if (s != "}") {
+        ss >> s;
+        roughness = atof(s.c_str()); 
+    }
+
+    return Vector4f(ambient, diffuse, specular, roughness);
 }
