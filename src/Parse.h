@@ -7,14 +7,19 @@
 #include <fstream>
 #include <sstream>
 
-#include "Camera.h"
-#include "Light.h"
-#include "Sphere.h"
-#include "Plane.h"
+
+class Camera;
+class Light;
+class Sphere;
+class Plane;
+class Triangle;
+class Pigment;
+class Finish;
 
 class Parse {
     
 public:
+    
     static bool parse(char *file);
     
 private:
@@ -27,10 +32,12 @@ private:
     static std::shared_ptr<Light> parseLight();
     static std::shared_ptr<Sphere> parseSphere();
     static std::shared_ptr<Plane> parsePlane();
+    static std::shared_ptr<Triangle> parseTriangle();
 
-    static Eigen::Vector3f parseVector();
-    static Eigen::Vector3f parsePigment();
-    static Eigen::Vector4f parseFinish();
+    static Eigen::Vector3f parseVector3f();
+    static Eigen::Vector4f parseVector4f();
+    static std::shared_ptr<Pigment> parsePigment();
+    static std::shared_ptr<Finish> parseFinish();
 
     static std::ifstream in;
     static std::stringstream ss;

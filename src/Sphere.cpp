@@ -1,5 +1,8 @@
 #include "Sphere.h"
 #include "Object.h"
+#include "Tools.h"
+#include "Pigment.h"
+#include "Finish.h"
 
 #include <iostream>
 #include <algorithm>
@@ -9,9 +12,9 @@
 using namespace std;
 using namespace Eigen;
 
-Sphere::Sphere(Vector3f position, float radius, Vector3f pigment, Vector4f finish) 
+Sphere::Sphere(Vector3f position, float radius, shared_ptr<Pigment> pigment, shared_ptr<Finish> finish) 
     : Object(pigment, finish),
-      radius(radius) 
+      radius(radius)
 {
     this->position = position;
 }
@@ -56,8 +59,9 @@ Vector3f Sphere::getNormal(Eigen::Vector3f hitPoint)
 void Sphere::print()
 {
     cout << "-- Sphere --" << endl;
-    cout << "Location: <" << position(0) << ", " << position(1) << ", " << position(2) << ">" << endl;
-    cout << "Radius: " << radius << endl;
-    cout << "Pigment: <" << pigment(0) << ", " << pigment(1) << ", " << pigment(2) << ">" << endl;
-    cout << "Finish: <" << finish(0) << ", " << finish(1) << ", " << finish(2) << ", " << finish(3) << ">" << endl; 
+    Tools::printVec3("Location", position);
+    Tools::printFloat("Radius", radius);
+    Tools::printPigment(pigment);
+    Tools::printFinish(finish);
+  
 }

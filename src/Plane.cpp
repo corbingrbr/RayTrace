@@ -1,6 +1,9 @@
 #include "Plane.h"
 
 #include "Object.h"
+#include "Tools.h"
+#include "Finish.h"
+#include "Pigment.h"
 
 #include <Eigen/Dense>
 #include <iostream>
@@ -8,7 +11,7 @@
 using namespace std;
 using namespace Eigen;
 
-Plane::Plane(Vector3f normal, float distance, Vector3f pigment, Vector4f finish) 
+Plane::Plane(Vector3f normal, float distance, shared_ptr<Pigment> pigment, shared_ptr<Finish> finish) 
     : Object(pigment, finish),
       normal(normal),
       distance(distance)
@@ -43,9 +46,10 @@ Vector3f Plane::getNormal(Vector3f hitPoint)
 
 void Plane::print()
 {
-    cout << "<" << normal(0) << ", " << normal(1) << ", " << normal(2) << ">" << endl;
-    cout << distance << endl;
-    cout << "Pigment: <" << pigment(0) << ", " << pigment(1) << ", " << pigment(2) << ">" << endl;
-    cout << "Finish: <" << finish(0) << ", " << finish(1) << ", " << finish(2) << ", " << finish(3) << ">" << endl; 
+    cout << "-- Plane --" << endl;
+    Tools::printVec3("Normal", -normal);
+    Tools::printFloat("Distance", -distance);
+    Tools::printPigment(pigment);
+    Tools::printFinish(finish);
 }
     
