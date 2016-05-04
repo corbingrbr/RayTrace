@@ -13,6 +13,7 @@
 using namespace std;
 using namespace Eigen;
 
+#define PRINT_SCENE true
 #define TESTING false
 
 shared_ptr<Camera> camera;
@@ -58,7 +59,7 @@ int main(int argc, char **argv)
 
     if (success) {
     
-        //scene->printObjects();
+        if (PRINT_SCENE) { scene->printObjects(); }
 
         if (TESTING) {
             unitTests();

@@ -9,6 +9,7 @@ class Window;
 class Scene;
 class Object;
 class Light;
+class Shade;
 
 class Camera 
 {
@@ -26,11 +27,12 @@ private:
     void unitTest(int i, int j, std::shared_ptr<Window> window, std::shared_ptr<Scene> scene);
     Eigen::Vector3f calcRay(int i, int j, std::shared_ptr<Window> window);
     std::pair<float, std::shared_ptr<Object> > intersectRay(Eigen::Vector3f ray, std::shared_ptr<Scene> scene);
-    Eigen::Vector3f castRay(Eigen::Vector3f ray, std::shared_ptr<Scene> scene, bool unitTest);
+    Shade castRay(Eigen::Vector3f location, Eigen::Vector3f ray, std::shared_ptr<Scene> scene, bool unitTest, int iteration);
     std::pair<float, std::shared_ptr<Object> > castShadowRay(std::shared_ptr<Object> object, Eigen::Vector3f loc, Eigen::Vector3f ray, std::shared_ptr<Scene> scene);
     
+    Shade calcLocalColor(std::shared_ptr<Scene> scene, std::shared_ptr<Object> object, Eigen::Vector3f hitPoint);
     Eigen::Vector3f calcAmbient(std::shared_ptr<Object> object);
-    Eigen::Vector3f calcDiffused(std::shared_ptr<Object> object, Eigen::Vector3f normal, Eigen::Vector3f feeler, std::shared_ptr<Light> light);
+    Eigen::Vector3f calcDiffuse(std::shared_ptr<Object> object, Eigen::Vector3f normal, Eigen::Vector3f feeler, std::shared_ptr<Light> light);
     Eigen::Vector3f calcSpecular(std::shared_ptr<Object> object, Eigen::Vector3f hitPoint, Eigen::Vector3f normal, Eigen::Vector3f feeler, std::shared_ptr<Light> light);
 
     Eigen::Vector3f location;

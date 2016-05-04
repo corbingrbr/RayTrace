@@ -23,7 +23,7 @@ Object(std::shared_ptr<Pigment> pigment, std::shared_ptr<Finish> finish)
     std::shared_ptr<Finish> getFinish() { return finish; }
     Eigen::Vector3f getPosition() { return position; }
 
-    Eigen::Vector3f getRGB() { return pigment->getRGB(); }
+    Eigen:: Vector3f getRGB() { return pigment->getRGB(); }
     float getFilter() { return pigment->getFilter(); }
     float getAmbient() { return finish->getAmbient(); }
     float getDiffuse() { return finish->getDiffuse();}
@@ -32,6 +32,8 @@ Object(std::shared_ptr<Pigment> pigment, std::shared_ptr<Finish> finish)
     float getReflection() { return finish->getReflection(); }
     float getRefraction() { return finish->getRefraction(); }
     float getIOR() { return finish->getIOR(); }
+    bool isReflective() { return finish->getReflection() > 0.0f; }
+    bool isRefractive() { return finish->getRefraction() > 0.0f; }
 
 protected:
     

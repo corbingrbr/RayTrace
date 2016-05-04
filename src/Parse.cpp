@@ -298,8 +298,6 @@ shared_ptr<Finish> Parse::parseFinish()
 
         string type = s;
 
-        cout << type << endl;
-
         ss >> s;
 
         if (type == "ambient") {
