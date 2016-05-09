@@ -9,11 +9,13 @@
 #include "Camera.h"
 #include "Sphere.h"
 #include "Parse.h"
+#include "Shade.h"
+#include "Tools.h"
 
 using namespace std;
 using namespace Eigen;
 
-#define PRINT_SCENE true
+#define PRINT_SCENE false
 #define TESTING false
 
 shared_ptr<Camera> camera;
@@ -43,6 +45,7 @@ void writeImage(string povfile)
 
 int main(int argc, char **argv)
 {
+
     if (argc < 4 || argc >= 5) { 
         cout << "Must supply width, height, and input_file" << endl;
         return 0;

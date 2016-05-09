@@ -1,6 +1,8 @@
 #include "Shade.h"
 
 #include <Eigen/Dense>
+#include <algorithm>
+#include "Tools.h"
 
 using namespace Eigen;
 using namespace std;
@@ -65,15 +67,47 @@ void Shade::setSpecular(Vector3f s)
     specular = s;
 }
 
-Shade Shade::operator+(Shade& other) {
-    Eigen::Vector3f _ambient = ambient + other.getAmbient();
-    Eigen::Vector3f _diffuse = diffuse + other.getDiffuse();
-    Eigen::Vector3f _specular = specular + other.getSpecular();
+void Shade::clamp()
+{
+    Tools::clampVec(&ambient, 1.0);
+    Tools::clampVec(&diffuse, 1.0);
+    Tools::clampVec(&specular, 1.0);
+    Tools::clampVec(&color, 1.0);
+}
+
+bool Shade::isBlack()
+{
+    return color(0) == 0 && color(1) == 0 && color(2) == 0;
+}
+
+Shade Shade::operator+(Shade& other) 
+{
+    Vector3f _ambient = ambient + other.getAmbient();
+    Vector3f _diffuse = diffuse + other.getDiffuse();
+    Vector3f _specular = specular + other.getSpecular();
     
     return Shade(_ambient, _diffuse, _specular);
 }
 
-Shade& Shade::operator*=(float scalar) {
+Shade Shade::operator*(float scalar)
+{
+    Vector3f _ambient = ambient * scalar;
+    Vector3f _diffuse = diffuse * scalar;
+    Vector3f _specular = specular * scalar;
+
+    return Shade(_ambient, _diffuse, _specular);
+}
+
+Shade Shade::operator^(float scalar)
+{
+    Vector3f _diffuse = diffuse * scalar;
+    Vector3f _specular = specular * scalar;
+
+    return Shade(ambient, _diffuse, _specular);
+}
+
+Shade& Shade::operator*=(float scalar) 
+{
     ambient *= scalar;
     diffuse *= scalar;
     specular *= scalar;
@@ -81,3 +115,5 @@ Shade& Shade::operator*=(float scalar) {
 
     return *this;
 }
+
+

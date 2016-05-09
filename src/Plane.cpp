@@ -26,29 +26,25 @@ Plane::~Plane()
 float Plane::intersection(Vector3f e, Vector3f d)
 {
     // assuming vectors are all normalized
-    float denom = normal.dot(d);
     Vector3f p0 = normal * distance;
+    float denom = normal.dot(d);
 
-    if (denom > 1e-6) {
-        Vector3f p0e = p0 - e;
-        float t = p0e.dot(normal) / denom;
-
-        return t;
-    }
-
-    return -1.0f; 
+    Vector3f p0e = p0 - e;
+    float t = p0e.dot(normal) / denom;
+    
+    return t;
 }
 
 Vector3f Plane::getNormal(Vector3f hitPoint) 
 {
-    return -normal.normalized();
+    return normal;
 }
 
 void Plane::print()
 {
     cout << "-- Plane --" << endl;
-    Tools::printVec3("Normal", -normal);
-    Tools::printFloat("Distance", -distance);
+    Tools::printVec3("Normal", normal);
+    Tools::printFloat("Distance", distance);
     Tools::printPigment(pigment);
     Tools::printFinish(finish);
 }

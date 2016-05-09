@@ -173,9 +173,9 @@ shared_ptr<Plane> Parse::parsePlane()
 {
     getToken(); // {
 
-    Vector3f normal = -parseVector3f();
+    Vector3f normal = parseVector3f();
     getToken();
-    float distance = -atof(token.c_str());
+    float distance = atof(token.c_str());
     
     nextLine();
 

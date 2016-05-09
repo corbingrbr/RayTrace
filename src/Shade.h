@@ -8,7 +8,11 @@ class Shade {
 public:
     
     Shade& operator*=(float scalar);
+    Shade operator*(float scalar);
+    Shade operator^(float scalar);
     Shade operator+(Shade& other);
+
+
 
     Shade();
     Shade(Eigen::Vector3f ambient, Eigen::Vector3f diffuse, Eigen::Vector3f specular);
@@ -21,6 +25,8 @@ public:
     void setDiffuse(Eigen::Vector3f diffuse);
     Eigen::Vector3f getSpecular();
     void setSpecular(Eigen::Vector3f specular);
+    bool isBlack();
+    void clamp();
     
         
 private:

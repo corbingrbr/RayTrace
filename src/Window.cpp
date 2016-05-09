@@ -44,7 +44,7 @@ void Window::genImage(string outfile)
         exit(EXIT_FAILURE);
     }
  
-    cout << "Writing image ... ";
+    cout << "Writing image ... " << flush;
    
     // write 24-bit uncompressed targa header
     // thanks to Paul Bourke (http://local.wasp.uwa.edu.au/~pbourke/dataformats/tga/)

@@ -54,7 +54,7 @@ void Scene::printObjects()
     }
 }
 
-pair<float, shared_ptr<Object> > Scene::intersections(shared_ptr<Object> object, Vector3f p0, Vector3f d)
+pair<float, shared_ptr<Object> > Scene::intersections(shared_ptr<Object> avoid, Vector3f p0, Vector3f d)
 {
     float best = numeric_limits<float>::infinity();
     float t;
@@ -62,7 +62,7 @@ pair<float, shared_ptr<Object> > Scene::intersections(shared_ptr<Object> object,
 
     for (unsigned int i = 0; i < objects.size(); i++) {
         
-        if (objects[i] != object) {
+        if (objects[i] != avoid) {
             t = objects[i]->intersection(p0, d);
         }
 

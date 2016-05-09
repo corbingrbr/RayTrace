@@ -7,11 +7,13 @@
 #include "Pigment.h"
 #include "Finish.h"
 #include "Shade.h"
+#include "PrintOut.h"
 
 #include <memory>
 #include <iostream>
 #include <utility>
 #include <algorithm>
+#include <stack>
 
 #include <Eigen/Dense>
 
@@ -19,6 +21,7 @@ using namespace Eigen;
 using namespace std;
 
 #define UNIT_TEST true
+#define HIT true
 #define REFL_RECURSES 5
 
 Camera::Camera(Vector3f _location, Vector3f _up, Vector3f _right, Vector3f _lookAt) :
@@ -35,7 +38,7 @@ Camera::~Camera()
 
 void Camera::castRays(shared_ptr<Window> window, shared_ptr<Scene> scene)
 {
-    cout << "Casting rays ... ";
+    cout << "Casting rays ... " << flush;
    
     Vector3f ray;
     Shade shade;
@@ -46,12 +49,13 @@ void Camera::castRays(shared_ptr<Window> window, shared_ptr<Scene> scene)
             // Generate ray direction from camera into scene
             ray = calcRay(i, j, window);
             
+            //cout << "Pixel: [" << i << ", " << j << "]" << endl;
+
             // Cast ray to get pixel color 
-            shade = castRay(location, ray, scene, !UNIT_TEST, REFL_RECURSES);
-            
+            shade = castRay(NULL, location, ray, scene, !UNIT_TEST, REFL_RECURSES, NULL);
+
             // Set color of pixel
-            window->setPixel(i, j, shade.getColor());
-            
+            window->setPixel(i, j, shade.getColor()); 
         } 
     }
 
@@ -63,15 +67,27 @@ void Camera::unitTests(shared_ptr<Window> window, shared_ptr<Scene> scene)
     cout << endl << endl;
     cout << "Running unit tests ..." << endl << endl;
 
-    unitTest(120, 120, window, scene);
-    unitTest(295, 265, window, scene);
-    unitTest(420, 130, window, scene);
+    //unitTest(320, 145, window, scene);
+    unitTest(315, 185, window, scene);
+    unitTest(220, 240, window, scene);
+
 }
 
 void Camera::unitTest(int i, int j, shared_ptr<Window> window, shared_ptr<Scene> scene)
 {
     cout << "Pixel: [" << i << ", " << j << "]" << endl;
-    castRay(location, calcRay(i, j, window), scene, UNIT_TEST, REFL_RECURSES);
+    
+    shared_ptr<stack<PrintOut> > log = make_shared<stack<PrintOut> >();
+    
+    Shade s = castRay(NULL, location, calcRay(i, j, window), scene, UNIT_TEST, REFL_RECURSES, log);
+
+    Tools::printVec3("Color", s.getColor());
+    cout << "------------" << endl << endl;
+
+    while (!log->empty()) {
+        log->top().print();
+        log->pop();
+    }
 }
 
 void Camera::print()
@@ -101,58 +117,49 @@ Vector3f Camera::calcRay(int i, int j, shared_ptr<Window> window)
     return ray;
 }
 
-Shade Camera::castRay(Vector3f location, Vector3f ray, shared_ptr<Scene> scene, bool unitTest, int iteration) {
+Shade Camera::castRay(shared_ptr<Object> avoid, Vector3f loc, Vector3f ray, shared_ptr<Scene> scene, bool unitTest, int iteration, shared_ptr<stack<PrintOut> > log) {
 
     Shade localColor = Shade();
     Shade reflectColor = Shade();
     Shade refractColor = Shade();
-    float reflect = 0.0f; // Reflection
-    float filter = 0.0f;  // Refraction
-
 
     // Fire ray into scene to detect objects
-    pair<float, shared_ptr<Object> > hitObject = intersectRay(ray, scene);
+    pair<float, shared_ptr<Object> > hitObject = intersectRay(avoid, loc, ray, scene);
     shared_ptr<Object> object = hitObject.second; // object which is intersected by ray
     float t = hitObject.first; // intersection is t-distance along ray
 
     // Check whether an object is hit
     if (object != NULL) {
+       
+        float reflect = object->getReflection();
+        float filter = object->getFilter();
 
         // Determine point in space which ray intersects object
-        Vector3f hitPoint = location + t * ray;
+        Vector3f hitPoint = loc + t * ray;
 
         // Calculate Local Color
-        localColor = calcLocalColor(scene, object, hitPoint); 
+        localColor = calcLocal(scene, object, hitPoint);
 
-        // Calculate Reflection Color
         if (object->isReflective() && iteration != 0) {
-
-            reflect = object->getReflection();
-            Vector3f normal = object->getNormal(hitPoint);
-            Vector3f reflRay = ray + 2*((-ray).dot(normal))*normal;
-            reflectColor = castRay(hitPoint, reflRay, scene, !UNIT_TEST, iteration - 1);
-            reflectColor *= reflect;
-        } 
-
-        if (object->isRefractive()) {
-            // Do stuff
-            refractColor *= object->getFilter();
+            reflectColor = calcReflection(scene, object, iteration, hitPoint, ray, unitTest, log);
         }
 
-        Shade color = localColor + reflectColor + refractColor;
+        // Calculate Refraction color       
+        Shade color;
 
+        reflectColor = reflectColor * reflect;
+        localColor = localColor ^ (1 - reflect); // ^ operator -> only scales diffuse & specular
+        color = localColor + reflectColor;
+       
+        color.clamp();
+        
         // Unit test print out
         if (unitTest) {
-            cout << "Iteration type: " << (iteration == REFL_RECURSES ? "Primary" : "Reflection") << endl;
+            bool isPrimary = iteration == REFL_RECURSES ? true : false;
             
-            Tools::printVec3("Location", location);
-            Tools::printVec3("Ray", ray);
-            Tools::printFloat("T", hitObject.first);
-            Tools::printVec3("Ambient", color.getAmbient());
-            Tools::printVec3("Diffuse", color.getDiffuse());
-            Tools::printVec3("Specular", color.getSpecular());
-            
-            cout << endl << endl;
+            PrintOut p = PrintOut(HIT, isPrimary, loc, ray, t, color.getAmbient(), color.getDiffuse(), color.getSpecular());
+
+            log->push(p); 
         }
         
         return color;
@@ -160,58 +167,76 @@ Shade Camera::castRay(Vector3f location, Vector3f ray, shared_ptr<Scene> scene, 
 
 
     if (unitTest) {
-        cout << "Iteration type: " << (iteration == REFL_RECURSES ? "Primary" : "Reflection") << endl;
-        Tools::printVec3("Location", location);
-        Tools::printVec3("Ray", ray);
-        cout << "No hit" << endl; 
+
+        bool isPrimary = iteration == REFL_RECURSES ? true : false;        
+        PrintOut p = PrintOut(!HIT, isPrimary, location, ray);      
+        log->push(p);
     }
     
     return Shade();
 }
 
-Shade Camera::calcLocalColor(shared_ptr<Scene> scene, shared_ptr<Object> object, Vector3f hitPoint)
+bool Camera::isShadowed(shared_ptr<Scene> scene, shared_ptr<Light> light, shared_ptr<Object> avoid, Vector3f hitPoint)
 {
-    Vector3f ambient = Vector3f(0,0,0);
-    Vector3f diffuse = Vector3f(0,0,0);
-    Vector3f specular = Vector3f(0,0,0);
-    float reflect = object->getReflection();
-    float filter = object->getFilter();
-
-    // Grab light
-    shared_ptr<Light> light = scene->getLight();
-    
     // Ray from hit point to light in scene
     Vector3f hit2Light = light->getPosition() - hitPoint;
     Vector3f feeler = hit2Light.normalized();
     
-    // Cast shadow feeler ray
-    pair<float, shared_ptr<Object> > shadowObject = castShadowRay(object, hitPoint, feeler, scene);
-    float tShadow = shadowObject.first;
+    // Cast shadow feeler ray  ---- TODO --- ERROR: it collides with 'avoid' ptr sometimes
+    pair<float, shared_ptr<Object> > shadowObject = intersectRay(avoid, hitPoint, feeler, scene);
+
+    return shadowObject.second != NULL &&  (shadowObject.first * feeler).norm() < hit2Light.norm();
+}
+
+Shade Camera::calcLocal(shared_ptr<Scene> scene, shared_ptr<Object> object, Vector3f hitPoint)
+{
+    Vector3f ambient = Vector3f(0,0,0);
+    Vector3f diffuse = Vector3f(0,0,0);
+    Vector3f specular = Vector3f(0,0,0);
+
+    // Iterate through lights in scene
+    shared_ptr<Light> light = scene->getLight();
+
+    if (!isShadowed(scene, light, object, hitPoint)) {
     
-    // Calc ray from center of object to hit point
-    Vector3f normal = object->getNormal(hitPoint);
-    
-    // If shadow cast on pixel then color ambient only
-    if (shadowObject.second == NULL || (tShadow * feeler).norm() > hit2Light.norm()) {
-        
-        diffuse = (1 - reflect - filter) * calcDiffuse(object, normal, feeler, light);
-        specular = (1 - reflect - filter) * calcSpecular(object, hitPoint, normal, feeler, light);
+        // Light vector
+        Vector3f hit2Light = light->getPosition() - hitPoint;
+        Vector3f feeler = hit2Light.normalized();
+        Vector3f normal = object->getNormal(hitPoint);
+   
+        diffuse = calcDiffuse(object, normal, feeler, light);
+        specular = calcSpecular(object, hitPoint, normal, feeler, light);
     }
-    
+
     ambient = calcAmbient(object);
-
+    
     // Local Color
-    return Shade(ambient, diffuse, specular); 
+    Shade s = Shade(ambient, diffuse, specular);
+    s.clamp();
+
+    return s; 
 }
 
-pair<float, shared_ptr<Object> > Camera::intersectRay(Vector3f ray, shared_ptr<Scene> scene)
-{
-    return scene->intersections(NULL, location, ray);
+Shade Camera::calcReflection(shared_ptr<Scene> scene, shared_ptr<Object> object, int iteration, Vector3f hitPoint, Vector3f ray, bool unitTest, shared_ptr<stack<PrintOut> > log)
+{       
+        Vector3f normal = object->getNormal(hitPoint);
+        Vector3f reflRay = ray - 2*((ray).dot(normal))*normal;
+        reflRay.normalize();
+
+        Shade reflectColor = castRay(object, hitPoint, reflRay, scene, unitTest, iteration - 1, log);
+        reflectColor.clamp();
+
+        return reflectColor; 
 }
 
-pair<float, shared_ptr<Object> > Camera::castShadowRay(shared_ptr<Object> object, Vector3f loc, Vector3f ray, shared_ptr<Scene> scene)
+Shade Camera::calcRefraction()
 {
-    return scene->intersections(object, loc, ray);
+}
+
+pair<float, shared_ptr<Object> > Camera::intersectRay(shared_ptr<Object> avoid, Vector3f loc, Vector3f ray, shared_ptr<Scene> scene)
+{
+    // ERROR here where avoid is actually not avoided ... take warning
+    return scene->intersections(avoid, loc, ray);
 }
 
 Vector3f Camera::calcAmbient(shared_ptr<Object> object)
@@ -223,8 +248,6 @@ Vector3f Camera::calcDiffuse(shared_ptr<Object> object, Vector3f normal, Vector3
 {
     // Dot product the two rays to determine diffused light coefficient
     float d = max(normal.dot(feeler), 0.0f);
-    
-    // Calculate diffused
     return Tools::mult2Vecs(object->getRGB() * object->getDiffuse() * d, light->getColor());
 }
 

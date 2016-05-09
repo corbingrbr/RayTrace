@@ -61,12 +61,10 @@ void Tools::printFinish(std::shared_ptr<Finish> f)
     printFloat("IOR", f->getIOR()); 
 }
 
-Vector3f Tools::clampVec(Vector3f v, float f) 
+void Tools::clampVec(Vector3f *v, float f) 
 {
-    // Clamp the values 
-    if (v(0) > f) { v(0) = f; }
-    if (v(1) > f) { v(1) = f; }
-    if (v(2) > f) { v(2) = f; }
-
-    return v;
+    // Clamp the values
+    if ((*v)(0) > f) { (*v)(0) = f; }
+    if ((*v)(1) > f) { (*v)(1) = f; }
+    if ((*v)(2) > f) { (*v)(2) = f; }
 }
