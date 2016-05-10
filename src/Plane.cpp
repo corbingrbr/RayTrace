@@ -23,7 +23,7 @@ Plane::~Plane()
 {
 }
 
-float Plane::intersection(Vector3f e, Vector3f d)
+float Plane::intersection(const Vector3f& e, const Vector3f& d)
 {
     // assuming vectors are all normalized
     Vector3f p0 = normal * distance;
@@ -35,7 +35,7 @@ float Plane::intersection(Vector3f e, Vector3f d)
     return t;
 }
 
-Vector3f Plane::getNormal(Vector3f hitPoint) 
+Vector3f Plane::getNormal(const Vector3f& hitPoint) 
 {
     return normal;
 }

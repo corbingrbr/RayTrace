@@ -16,7 +16,7 @@ using namespace std;
 using namespace Eigen;
 
 #define PRINT_SCENE false
-#define TESTING false
+#define TESTING true
 
 shared_ptr<Camera> camera;
 shared_ptr<Window> window;

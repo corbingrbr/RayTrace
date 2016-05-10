@@ -23,10 +23,10 @@ Sphere::~Sphere()
 {
 }
 
-float Sphere::intersection(Vector3f e, Vector3f d)
+float Sphere::intersection(const Vector3f& e, const Vector3f& d)
 {
     // Check discriminant first
-    float discriminant = sqrt(pow(d.dot(e-position), 2) - d.dot(d) * ((e-position).dot(e-position) - radius* radius));
+    float discriminant = sqrt(pow(d.dot(e-position), 2) - d.dot(d) * ((e-position).dot(e-position) - radius * radius));
     
     // Calculate intersection point, make sure t > 0
     if (discriminant < 0.0) {
@@ -35,14 +35,14 @@ float Sphere::intersection(Vector3f e, Vector3f d)
         
     } else if (discriminant == 0.0) {
         
-        float t = (-d).dot(e - position) / (d.dot(d));
+        float t = (-d).dot(e - position) / d.dot(d);
          
         return t;
         
     } else {
         
-        float t1 = ((-d).dot(e - position) + discriminant) / (d.dot(d));
-        float t2 = ((-d).dot(e - position) - discriminant) / (d.dot(d));
+        float t1 = (-d.dot(e - position) + discriminant) / d.dot(d);
+        float t2 = (-d.dot(e - position) - discriminant) / d.dot(d);
         
         if (t1 < 0) { return t2; }
         if (t2 < 0) { return t1; }
@@ -51,7 +51,7 @@ float Sphere::intersection(Vector3f e, Vector3f d)
     }  
 }
 
-Vector3f Sphere::getNormal(Eigen::Vector3f hitPoint)
+Vector3f Sphere::getNormal(const Vector3f& hitPoint)
 {
     return (hitPoint - position).normalized();
 }

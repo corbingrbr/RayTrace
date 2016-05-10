@@ -20,14 +20,14 @@ Triangle::~Triangle()
 {
 }
 
-float Triangle::intersection(Vector3f p0, Vector3f ray)
+float Triangle::intersection(const Vector3f& p0, const Vector3f& ray)
 {
     /*      A       x       b
         | a d g | | B |   | j |
         | b e h | | y | = | k |
         | c f i | | t |   | l |  */
 
-    float beta, gamma, t = -1.0; // beta, gamma, t -> variables to solve for
+    float beta, gamma, t; // beta, gamma, t -> variables to solve for
     float a, b, c, d, e, f, g, h, i; // components of A
     float j, k, l; // components of b
     float ei_hf, gf_di, dh_eg, ak_jb, jc_al, bl_kc; // Caching of computations
@@ -42,8 +42,7 @@ float Triangle::intersection(Vector3f p0, Vector3f ray)
     f = vertices[A](Z) - vertices[C](Z); // za - zc
     g = ray(X); // xd
     h = ray(Y); // yd
-    i = ray(Z); // zd
-    
+    i = ray(Z); // zd    
     j = vertices[A](X) - p0(X); // xa - xe
     k = vertices[A](Y) - p0(Y); // ya - ye
     l = vertices[A](Z) - p0(Z); // za - ze
@@ -59,22 +58,22 @@ float Triangle::intersection(Vector3f p0, Vector3f ray)
     float M = a*ei_hf + b*gf_di + c*dh_eg; // determinant of A
   
     // t
-    t = (f*ak_jb + e*jc_al + d*bl_kc) / M;
+    t = -(f*ak_jb + e*jc_al + d*bl_kc) / M;
     
     if (t < 0.0f) { return -1.0f; }
 
     gamma = (i*ak_jb + h*jc_al + g*bl_kc) / M;
 
     if (gamma < 0 || gamma > 1) { return -1.0f; } 
-
+       
     beta = (j*ei_hf + k*gf_di + l*dh_eg) / M;
     
     if (beta < 0 || beta > 1 - gamma) { return -1.0f; }
- 
+
     return t; // SUCCESS
 }
 
-Vector3f Triangle::getNormal(Vector3f hitPoint)
+Vector3f Triangle::getNormal(const Vector3f& hitPoint)
 {
     return normal;
 }

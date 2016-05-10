@@ -18,7 +18,7 @@ triangle {
 }
 
 triangle {
-     <0, 1, 0 >,
+     <0, 1, 0 >, 
      <-1, -.3, 0 >,
      <0, -.3, 3 >
      pigment { color rgb <0.65, 0.4, 0.4> }
