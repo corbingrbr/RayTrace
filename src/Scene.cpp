@@ -63,12 +63,13 @@ pair<float, shared_ptr<Object> > Scene::intersections(shared_ptr<Object> avoid, 
     for (unsigned int i = 0; i < objects.size(); i++) {
         
         if (objects[i] != avoid) {
-            t = objects[i]->intersection(p0, d);
-        }
-
-        if ( t >= 0.0f && t < best) {
-            best = t;
-            hitObject = objects[i];
+             
+             t = objects[i]->intersection(p0, d);
+             
+             if ( t >= 0.0f && t < best) {
+                 best = t;
+                 hitObject = objects[i];
+             }
         }
     }
 

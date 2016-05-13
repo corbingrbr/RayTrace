@@ -116,4 +116,11 @@ Shade& Shade::operator*=(float scalar)
     return *this;
 }
 
+Shade& Shade::operator^=(float scalar)
+{
+    diffuse *= scalar;
+    specular *= scalar;
+
+    return *this;
+}
 

@@ -8,6 +8,7 @@ class Shade {
 public:
     
     Shade& operator*=(float scalar);
+    Shade& operator^=(float scalar);
     Shade operator*(float scalar);
     Shade operator^(float scalar);
     Shade operator+(Shade& other);

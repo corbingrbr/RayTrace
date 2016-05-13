@@ -6,9 +6,15 @@
 using namespace Eigen;
 using namespace std;
 
-PrintOut::PrintOut(bool hit, bool isPrimary, Vector3f location, Vector3f ray, float t, Vector3f ambient, Vector3f diffuse, Vector3f specular) 
+PrintOut::PrintOut()
+{
+}
+
+// REFACTOR
+
+PrintOut::PrintOut(bool hit, int type, Vector3f location, Vector3f ray, float t, Vector3f ambient, Vector3f diffuse, Vector3f specular) 
     : hit(hit), 
-      isPrimary(isPrimary),
+      type(type),
       location(location),
       ray(ray),
       t(t),
@@ -18,9 +24,9 @@ PrintOut::PrintOut(bool hit, bool isPrimary, Vector3f location, Vector3f ray, fl
 {
 }
 
-PrintOut::PrintOut(bool hit, bool isPrimary, Vector3f location, Vector3f ray) 
+PrintOut::PrintOut(bool hit, int type, Vector3f location, Vector3f ray) 
     : hit(hit), 
-      isPrimary(isPrimary),
+      type(type),
       location(location),
       ray(ray)
 {
@@ -32,7 +38,22 @@ PrintOut::~PrintOut()
 
 void PrintOut::print()
 {
-    cout << "Iteration type: " << (isPrimary ? "Primary" : "Reflection") << endl;
+    string s;
+
+    switch(type) {
+        
+    case PRIMARY : 
+        s = "Primary";
+        break;
+    case REFLECT :
+        s = "Reflection";
+        break;
+    case REFRACT :
+        s = "Refraction";
+        break;
+    }
+
+    cout << "Iteration type: " << s << endl;
 
     if (hit) {
         
