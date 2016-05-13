@@ -77,7 +77,7 @@ void Shade::clamp()
 
 bool Shade::isBlack()
 {
-    return color(0) == 0 && color(1) == 0 && color(2) == 0;
+    return !(color(0) > 0 || color(1) > 0 || color(2) > 0);
 }
 
 Shade Shade::operator+(Shade& other) 

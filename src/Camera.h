@@ -35,7 +35,7 @@ private:
     bool isShadowed(std::shared_ptr<Scene> scene, std::shared_ptr<Light> light, std::shared_ptr<Object> avoid, const Eigen::Vector3f& hitPoint);
     Shade calcLocal(std::shared_ptr<Scene> scene, std::shared_ptr<Object> object, const Eigen::Vector3f& hitPoint);
     bool calcReflection(std::shared_ptr<Scene> scene, std::shared_ptr<Object> object, int iteration, const Eigen::Vector3f& hitPoint, const Eigen::Vector3f& ray, bool unitTest, std::shared_ptr<std::stack<PrintOut> > log, Shade *color);
-    Shade calcRefraction(std::shared_ptr<Scene> scene, std::shared_ptr<Object> object, const Eigen::Vector3f& hitPoint, const Eigen::Vector3f& ray, bool unitTest, std::shared_ptr<std::stack<PrintOut> > log);  
+    Shade calcRefraction(std::shared_ptr<Scene> scene, std::shared_ptr<Object> object, int iteration, const Eigen::Vector3f& hitPoint, const Eigen::Vector3f& ray, bool unitTest, std::shared_ptr<std::stack<PrintOut> > log);  
     Eigen::Vector3f calcRefractionRay(float n1, float n2, const Eigen::Vector3f& ray, const Eigen::Vector3f& normal);
     
     Eigen::Vector3f calcAmbient(std::shared_ptr<Object> object);

@@ -38,6 +38,7 @@ Object(std::shared_ptr<Pigment> pigment, std::shared_ptr<Finish> finish)
 protected:
     
     Eigen::Vector3f position;
+    Eigen::Matrix4f transform;
     std::shared_ptr<Pigment> pigment;
     std::shared_ptr<Finish> finish;
 

@@ -25,6 +25,7 @@ using namespace std;
 #define HIT true
 #define REFL_RECURSES 5
 #define AIR 1.0
+#define EPSILON .00001
 
 Camera::Camera(Vector3f _location, Vector3f _up, Vector3f _right, Vector3f _lookAt) :
     location(_location),
@@ -73,9 +74,9 @@ void Camera::unitTests(shared_ptr<Window> window, shared_ptr<Scene> scene)
     cout << endl << endl;
     cout << "Running unit tests ..." << endl << endl;
 
-    //unitTest(320, 145, window, scene);
-    unitTest(265, 200, window, scene);
-    //unitTest(220, 240, window, scene);
+    unitTest(320, 145, window, scene);
+    unitTest(315, 185, window, scene);
+    unitTest(220, 240, window, scene);
 
 }
 
@@ -137,7 +138,7 @@ Shade Camera::castRay(shared_ptr<Object> avoid, const Vector3f& loc, const Vecto
     Shade color;
 
     // Check whether the ray has intersected an object within the scene
-    if (object != NULL) {
+    if (object != NULL && iteration > 0) {
        
         float reflect = object->getReflection();
         float filter = object->getFilter();
@@ -153,30 +154,26 @@ Shade Camera::castRay(shared_ptr<Object> avoid, const Vector3f& loc, const Vecto
                 
             } else {
                 
-                Shade localColor = calcLocal(scene, object, hitPoint);
-                Shade reflectColor;
-                
-                if (iteration > 0) {
+                    Shade localColor = calcLocal(scene, object, hitPoint);
+                    Shade reflectColor;
+                    
                     if (!calcReflection(scene, object, iteration, hitPoint,
                                         ray, unitTest, log, &reflectColor)) {
                         reflect = 0;
                     }
-                }
                 
-                localColor ^= (1 - reflect);
-                reflectColor *= reflect;
-
-                color = localColor + reflectColor;
+                    
+                    localColor ^= (1 - reflect);
+                    reflectColor *= reflect;
+                    color = localColor + reflectColor;
             }
         
         } else {  
-            color = calcRefraction(scene, object, hitPoint, ray, unitTest, log);
+            color = calcRefraction(scene, object, iteration, hitPoint, ray, unitTest, log);
         }
      
     } else { 
-
-        color = Shade();
-    
+        color = Shade();   
     }
 
     color.clamp();
@@ -204,12 +201,7 @@ bool Camera::isShadowed(shared_ptr<Scene> scene, shared_ptr<Light> light, shared
     Vector3f hit2Light = light->getPosition() - hitPoint;
     Vector3f feeler = hit2Light.normalized();
     
-    // Cast shadow feeler ray  ---- TODO --- ERROR: it collides with 'avoid' ptr sometimes, wtf
     pair<float, shared_ptr<Object> > shadowObject = intersectRay(avoid, hitPoint, feeler, scene);
-
-    if ( shadowObject.second != NULL) {
-       
-    }
 
     return shadowObject.second != NULL && (shadowObject.first * feeler).norm() < hit2Light.norm();
 }
@@ -250,12 +242,11 @@ bool Camera::calcReflection(shared_ptr<Scene> scene, shared_ptr<Object> object, 
     reflRay.normalize();
 
     *color = castRay(object, hitPoint, reflRay, scene, unitTest, iteration - 1, log, REFLECT);
-    Vector3f c = color->getColor();
     
-    return (c(0) > 0 || c(1) > 0 || c(2) > 0) ? true : false;
+    return !color->isBlack() ? true : false;
 }
 
-Shade Camera::calcRefraction(shared_ptr<Scene> scene, shared_ptr<Object> object, const Vector3f& hitPoint, const Vector3f& ray, bool unitTest, shared_ptr<stack<PrintOut> > log)
+Shade Camera::calcRefraction(shared_ptr<Scene> scene, shared_ptr<Object> object, int iteration, const Vector3f& hitPoint, const Vector3f& ray, bool unitTest, shared_ptr<stack<PrintOut> > log)
 {
     Shade reflectColor;
     Shade refractColor;
@@ -271,9 +262,8 @@ Shade Camera::calcRefraction(shared_ptr<Scene> scene, shared_ptr<Object> object,
     // Index of refraction setting
     float n1 = entering ? AIR : ior;
     float n2 = entering ? ior : AIR;
-
     
-    calcReflection(scene, object, REFL_RECURSES, hitPoint, ray, unitTest, log, &reflectColor);
+    calcReflection(scene, object, iteration, hitPoint, ray, !UNIT_TEST, NULL, &reflectColor);
 
     if (entering) {
         
@@ -295,17 +285,19 @@ Shade Camera::calcRefraction(shared_ptr<Scene> scene, shared_ptr<Object> object,
         }      
     }
     
-    float R0 = pow(n2 - 1, 2) / pow(n2 + 1, 2);
-    float R = R0 + (1 - R0) * pow(1-c, 5);
-    
-    Vector3f newLoc = hitPoint + refractRay * .0000001;
+    Vector3f newLoc = hitPoint + refractRay * EPSILON;
 
-    refractColor = castRay(NULL, newLoc, refractRay, scene, !UNIT_TEST, REFL_RECURSES, NULL, REFRACT);
+    refractColor = castRay(NULL, newLoc, refractRay, scene, unitTest, iteration-1, log, REFRACT);
+   
+    float R0 = pow(ior - 1, 2) / pow(ior + 1, 2);
+    float R = R0 + (1 - R0) * pow(1-c, 5);
+
     refractColor *= (1 - R);
     reflectColor *= R;
     
     Shade color = refractColor + reflectColor;
     color.clamp();
+
     
     return color;
 }
