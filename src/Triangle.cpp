@@ -10,8 +10,8 @@
 using namespace std;
 using namespace Eigen;
 
-Triangle::Triangle(Vector3f vertices[], shared_ptr<Pigment> pigment, shared_ptr<Finish> finish)
-    : Object(pigment, finish), 
+Triangle::Triangle(Vector3f vertices[], shared_ptr<Pigment> pigment, shared_ptr<Finish> finish, Matrix4f invXForm)
+    : Object(pigment, finish, invXForm), 
       vertices(vertices)
 {
 }

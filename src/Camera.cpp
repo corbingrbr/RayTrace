@@ -45,7 +45,7 @@ void Camera::castRays(shared_ptr<Window> window, shared_ptr<Scene> scene)
     Shade shade;
 
     float completed = 0;
-    float inc = 100.00 / (window->getWidth() * window->getHeight());
+    //float inc = 100.00 / (window->getWidth() * window->getHeight());
 
     cout << setprecision(1) << fixed;
     cout << "Casting rays ..." << flush;
@@ -62,7 +62,7 @@ void Camera::castRays(shared_ptr<Window> window, shared_ptr<Scene> scene)
             // Set color of pixel
             window->setPixel(i, j, shade.getColor()); 
 
-            completed += inc;
+            //completed += inc;
         }
     }
 
@@ -220,7 +220,9 @@ Shade Camera::calcLocal(shared_ptr<Scene> scene, shared_ptr<Object> object, cons
         // Light vector
         Vector3f hit2Light = light->getPosition() - hitPoint;
         Vector3f feeler = hit2Light.normalized();
-        Vector3f normal = object->getNormal(hitPoint);
+        Vector3f n = object->getNormal(hitPoint);
+
+        Vector3f normal = (object->getInvXForm() * Vector4f(n(0), n(1), n(2), 0)).head(3);
    
         diffuse = calcDiffuse(object, normal, feeler, light);
         specular = calcSpecular(object, hitPoint, normal, feeler, light);

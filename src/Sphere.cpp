@@ -12,8 +12,8 @@
 using namespace std;
 using namespace Eigen;
 
-Sphere::Sphere(Vector3f position, float radius, shared_ptr<Pigment> pigment, shared_ptr<Finish> finish) 
-    : Object(pigment, finish),
+Sphere::Sphere(Vector3f position, float radius, shared_ptr<Pigment> pigment, shared_ptr<Finish> finish, Matrix4f invXForm) 
+    : Object(pigment, finish, invXForm),
       radius(radius)
 {
     this->position = position;

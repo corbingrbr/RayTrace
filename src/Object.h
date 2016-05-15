@@ -10,9 +10,10 @@ class Object {
 
 public:
 
-Object(std::shared_ptr<Pigment> pigment, std::shared_ptr<Finish> finish) 
+Object(std::shared_ptr<Pigment> pigment, std::shared_ptr<Finish> finish, Eigen::Matrix4f invXForm) 
     : pigment(pigment),
-        finish(finish) 
+        finish(finish),
+        invXForm(invXForm)
         {
         }
     
@@ -34,11 +35,13 @@ Object(std::shared_ptr<Pigment> pigment, std::shared_ptr<Finish> finish)
     float getIOR() { return finish->getIOR(); }
     bool isReflective() { return finish->getReflection() > 0.0f; }
     bool isRefractive() { return finish->getRefraction() > 0.0f; }
+    Eigen::Matrix4f getInvXForm() { return invXForm; }
+
 
 protected:
     
     Eigen::Vector3f position;
-    Eigen::Matrix4f transform;
+    Eigen::Matrix4f invXForm;
     std::shared_ptr<Pigment> pigment;
     std::shared_ptr<Finish> finish;
 

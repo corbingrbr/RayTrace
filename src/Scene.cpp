@@ -60,11 +60,18 @@ pair<float, shared_ptr<Object> > Scene::intersections(shared_ptr<Object> avoid, 
     float t;
     shared_ptr<Object> hitObject = NULL;
 
+    Vector4f pXForm = Vector4f(p0(0), p0(1), p0(2), 1);
+    Vector4f dXForm = Vector4f(d(0), d(1), d(2), 0);
+
     for (unsigned int i = 0; i < objects.size(); i++) {
         
         if (objects[i] != avoid) {
-             
-             t = objects[i]->intersection(p0, d);
+            Matrix4f inv = objects[i]->getInvXForm();
+            
+            Vector4f modelp0 = inv * pXForm;
+            Vector4f modeld = inv * dXForm;
+
+            t = objects[i]->intersection(modelp0.head(3), modeld.head(3));
              
              if ( t >= 0.0f && t < best) {
                  best = t;

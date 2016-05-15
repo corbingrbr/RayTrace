@@ -13,7 +13,7 @@ class Triangle : public Object {
 
 public:
     
-    Triangle(Eigen::Vector3f vertices[], std::shared_ptr<Pigment> pigment, std::shared_ptr<Finish> finish);
+    Triangle(Eigen::Vector3f vertices[], std::shared_ptr<Pigment> pigment, std::shared_ptr<Finish> finish, Eigen::Matrix4f invXForm);
     virtual ~Triangle();
     float intersection(const Eigen::Vector3f& e, const Eigen::Vector3f& d);
     Eigen::Vector3f getNormal(const Eigen::Vector3f& hitPoint);

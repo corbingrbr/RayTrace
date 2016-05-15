@@ -6,6 +6,7 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <Eigen/Dense>
 
 
 class Camera;
@@ -33,6 +34,11 @@ private:
     static std::shared_ptr<Sphere> parseSphere();
     static std::shared_ptr<Plane> parsePlane();
     static std::shared_ptr<Triangle> parseTriangle();
+
+    static Eigen::Matrix4f parseTransforms();
+    static Eigen::Matrix4f translate(Eigen::Vector3f t);
+    static Eigen::Matrix4f rotate(Eigen::Vector3f r);
+    static Eigen::Matrix4f scale(Eigen::Vector3f s);
 
     static Eigen::Vector3f parseVector3f();
     static Eigen::Vector4f parseVector4f();

@@ -11,8 +11,8 @@
 using namespace std;
 using namespace Eigen;
 
-Plane::Plane(Vector3f normal, float distance, shared_ptr<Pigment> pigment, shared_ptr<Finish> finish) 
-    : Object(pigment, finish),
+Plane::Plane(Vector3f normal, float distance, shared_ptr<Pigment> pigment, shared_ptr<Finish> finish, Matrix4f invXForm) 
+    : Object(pigment, finish, invXForm),
       normal(normal),
       distance(distance)
 {

@@ -7,6 +7,7 @@
 #include <cstring>
 #include <memory>
 #include <Eigen/Dense>
+#include <algorithm>
 
 #include "Camera.h"
 #include "Light.h"
@@ -16,6 +17,7 @@
 #include "Triangle.h"
 #include "Pigment.h"
 #include "Finish.h"
+#include "Tools.h"
 
 using namespace std;
 using namespace Eigen;
@@ -156,17 +158,18 @@ shared_ptr<Sphere> Parse::parseSphere()
     
     getToken();
     float radius = atof(token.c_str());
-    
     nextLine();
     
     shared_ptr<Pigment> pigment = parsePigment();  
     nextLine();
 
     shared_ptr<Finish> finish = parseFinish();
-
-    skipRest();
+    nextLine();
     
-    return make_shared<Sphere>(position, radius, pigment, finish);
+    Matrix4f xform = parseTransforms();
+    
+
+    return make_shared<Sphere>(position, radius, pigment, finish, xform);
 }
 
 shared_ptr<Plane> Parse::parsePlane()
@@ -176,18 +179,17 @@ shared_ptr<Plane> Parse::parsePlane()
     Vector3f normal = parseVector3f();
     getToken();
     float distance = atof(token.c_str());
-    
     nextLine();
 
-    shared_ptr<Pigment> pigment = parsePigment();
-    
+    shared_ptr<Pigment> pigment = parsePigment();    
     nextLine();
 
     shared_ptr<Finish> finish = parseFinish();
-    
-    skipRest();
+    nextLine();
+
+    Matrix4f xform = parseTransforms();
    
-    return make_shared<Plane>(normal, distance, pigment, finish);
+    return make_shared<Plane>(normal, distance, pigment, finish, xform);
 }
 
 shared_ptr<Triangle> Parse::parseTriangle()
@@ -208,10 +210,91 @@ shared_ptr<Triangle> Parse::parseTriangle()
      
      shared_ptr<Finish> finish = parseFinish();
 
-     shared_ptr<Triangle> triangle = make_shared<Triangle>(vertices, pigment, finish);
+     Matrix4f xform = parseTransforms();
+
+     shared_ptr<Triangle> triangle = make_shared<Triangle>(vertices, pigment, finish, xform);
      triangle->init();
      
      return triangle;
+}
+
+Matrix4f Parse::parseTransforms() 
+{
+    Matrix4f xform = Matrix4f::Identity();
+    
+    getToken();
+    
+    while (token != "}") {
+        
+        if (token == "scale") {
+            xform = scale(parseVector3f()) * xform;
+        } else if (token == "rotate") {
+            // Only rotates about one axis at a time
+            xform = rotate(parseVector3f()) * xform;
+        } else if (token == "translate"){
+            xform = translate(parseVector3f()) * xform;
+        } else {
+            cout << "Unknown transform " << token << endl;
+        }
+        
+        nextLine();
+        getToken();
+    }
+
+    return xform.inverse();
+}
+
+Matrix4f Parse::translate(Vector3f t)
+{
+    Matrix4f E = Matrix4f::Identity();
+    E(0,3) = t(0);
+	E(1,3) = t(1);
+	E(2,3) = t(2);
+
+    return E;
+}
+
+Matrix4f Parse::rotate(Vector3f r) 
+{
+    float deg2rad = M_PI / 180;
+
+    Matrix4f E = Matrix4f::Identity();
+    
+    if (r(0) > 0) { // X - Axis
+        
+        E(1,1) = cos(r(1)*deg2rad);
+        E(2,1) = sin(r(1)*deg2rad);
+        E(1,2) = -sin(r(1)*deg2rad);
+        E(2,2) = cos(r(1)*deg2rad);
+
+        
+    } else if (r(1) > 0) { // Y - Axis
+       
+        E(0,0) = cos(r(0)*deg2rad);
+        E(2,0) = -sin(r(0)*deg2rad);
+        E(0,2) = sin(r(0)*deg2rad);
+        E(2,2) = cos(r(0)*deg2rad);
+        
+    } else { // Z - Axis
+        
+        E(0,0) = cos(r(2)*deg2rad);
+        E(1,0) = sin(r(2)*deg2rad);
+        E(0,1) = -sin(r(2)*deg2rad);
+        E(1,1) = cos(r(2)*deg2rad);
+        
+    }
+
+    return E;
+}
+
+Matrix4f Parse::scale(Vector3f s) 
+{
+  	Matrix4f E = Matrix4f::Identity();
+	E(0,0) = s(0);
+	E(1,1) = s(1);
+	E(2,2) = s(2);
+    
+	return E;  
 }
 
 Vector3f Parse::parseVector3f()
