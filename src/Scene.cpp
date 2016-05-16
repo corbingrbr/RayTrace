@@ -32,9 +32,9 @@ void Scene::addLight(shared_ptr<Light> light)
     lights.push_back(light);
 }
 
-shared_ptr<Light> Scene::getLight()
+vector<shared_ptr<Light> > Scene::getLights()
 {
-    return lights[0];
+    return lights;
 }
 
 void Scene::printObjects()

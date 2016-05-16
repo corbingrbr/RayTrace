@@ -22,8 +22,8 @@ using namespace Eigen;
 #define TESTING false
 
 // Anti-Aliasing
-#define AA_RES 1
-#define JITTER false
+#define AA_RES 3
+#define JITTER true
 
 shared_ptr<Camera> camera;
 shared_ptr<Window> window;
@@ -54,19 +54,26 @@ void writeImage(string povfile)
 int main(int argc, char **argv)
 {
 
-    if (argc < 4 || argc >= 5) { 
-        cout << "Must supply width, height, and input_file" << endl;
+    if (argc < 5 || argc >= 6) { 
+        cout << "Must supply width, height, input_file, and anti-aliasing (0/1)" << endl;
         return 0;
     }
 
     int width = atoi(argv[1]);
     int height = atoi(argv[2]);
     char *file = argv[3];
-
+    int aa = atoi(argv[4]);
+    
     window = make_shared<Window>(width, height);
     scene = make_shared<Scene>();
     
-    bool success = Parse::parse(file, AA_RES, JITTER);
+    bool success;
+
+    if (aa == 1) {
+        success = Parse::parse(file, 3, JITTER);
+    } else {
+        success = Parse::parse(file, 1, !JITTER);
+    }
 
     if (JITTER) { srand(time(NULL)); } // Seed random number generator
 

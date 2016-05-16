@@ -251,19 +251,22 @@ Shade Camera::calcLocal(shared_ptr<Scene> scene, shared_ptr<Object> object, cons
     Vector3f specular = Vector3f(0,0,0);
 
     // Iterate through lights in scene
-    shared_ptr<Light> light = scene->getLight();
+    vector<shared_ptr<Light> > lights = scene->getLights();
 
-    if (!isShadowed(scene, light, object, hitPoint)) {
-
-        // Light vector
-        Vector3f hit2Light = light->getPosition() - hitPoint;
-        Vector3f feeler = hit2Light.normalized();
-        Vector3f n = object->getNormal(hitPoint);
-        Vector3f normal = (object->getInvXForm() * Vector4f(n(0), n(1), n(2), 0)).head(3);
-   
-        diffuse = calcDiffuse(object, normal, feeler, light);
-        specular = calcSpecular(object, hitPoint, normal, feeler, light);
-    } 
+    for (int i = 0; i < lights.size(); i++) {
+        
+        if (!isShadowed(scene, lights[i], object, hitPoint)) {
+            
+            // Light vector
+            Vector3f hit2Light = lights[i]->getPosition() - hitPoint;
+            Vector3f feeler = hit2Light.normalized();
+            Vector3f n = object->getNormal(hitPoint);
+            Vector3f normal = (object->getInvXForm() * Vector4f(n(0), n(1), n(2), 0)).head(3);
+            
+            diffuse += calcDiffuse(object, normal, feeler, lights[i]);
+            specular += calcSpecular(object, hitPoint, normal, feeler, lights[i]);
+        } 
+    }
     
     ambient = calcAmbient(object);
     

@@ -18,7 +18,7 @@ public:
     virtual ~Scene();
     void addObject(std::shared_ptr<Object> object);
     void addLight(std::shared_ptr<Light> light);
-    std::shared_ptr<Light> getLight();
+    std::vector<std::shared_ptr<Light> > getLights();
     void printObjects();
     std::pair<float, std::shared_ptr<Object> > intersections(std::shared_ptr<Object> avoid, const Eigen::Vector3f& p0, const Eigen::Vector3f& d);
   
