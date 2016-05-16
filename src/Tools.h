@@ -18,6 +18,7 @@ public:
     static void printPigment(std::shared_ptr<Pigment> p);
     static void printFinish(std::shared_ptr<Finish> f);
     static void clampVec(Eigen::Vector3f *v, float f);
+    static float randRange(float floor, float ceiling);
 
 private:
 

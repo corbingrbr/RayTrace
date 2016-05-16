@@ -3,6 +3,9 @@
 #include <memory>
 
 #include <Eigen/Dense>
+#include <cstdlib>
+#include <time.h>
+
 
 #include "Window.h"
 #include "Scene.h"
@@ -18,11 +21,16 @@ using namespace Eigen;
 #define PRINT_SCENE false
 #define TESTING false
 
+// Anti-Aliasing
+#define AA_RES 1
+#define JITTER false
+
 shared_ptr<Camera> camera;
 shared_ptr<Window> window;
 shared_ptr<Scene> scene;
 
 // Creates image using scene and lighting
+
 void rayTrace()
 {
     camera->castRays(window, scene);
@@ -58,7 +66,9 @@ int main(int argc, char **argv)
     window = make_shared<Window>(width, height);
     scene = make_shared<Scene>();
     
-    bool success = Parse::parse(file);
+    bool success = Parse::parse(file, AA_RES, JITTER);
+
+    if (JITTER) { srand(time(NULL)); } // Seed random number generator
 
     if (success) {
     

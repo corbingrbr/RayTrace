@@ -21,7 +21,7 @@ class Parse {
     
 public:
     
-    static bool parse(char *file);
+    static bool parse(char *file, int aa_res, bool jitter);
     
 private:
     
@@ -29,7 +29,7 @@ private:
     static void emptyStream();
     static void nextLine();
     static void skipRest();
-    static std::shared_ptr<Camera> parseCamera();
+    static std::shared_ptr<Camera> parseCamera(int aa_res, bool jitter);
     static std::shared_ptr<Light> parseLight();
     static std::shared_ptr<Sphere> parseSphere();
     static std::shared_ptr<Plane> parsePlane();

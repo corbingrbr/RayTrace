@@ -15,6 +15,7 @@
 #include <utility>
 #include <algorithm>
 #include <stack>
+#include <cstdlib>
 
 #include <Eigen/Dense>
 
@@ -27,12 +28,18 @@ using namespace std;
 #define AIR 1.0
 #define EPSILON .00001
 
-Camera::Camera(Vector3f _location, Vector3f _up, Vector3f _right, Vector3f _lookAt) :
+Camera::Camera(Vector3f _location, Vector3f _up, Vector3f _right, Vector3f _lookAt, int AA_res, bool jitter) :
     location(_location),
     up(_up),
     right(_right),
-    lookAt(_lookAt)
+    lookAt(_lookAt),
+    AA_res(AA_res),
+    jitter(jitter)
 {
+    rght = right.norm() / 2;
+    left = -rght;
+    top = up.norm() / 2;
+    bottom = -top;
 }
     
 Camera::~Camera()
@@ -41,7 +48,7 @@ Camera::~Camera()
 
 void Camera::castRays(shared_ptr<Window> window, shared_ptr<Scene> scene)
 {  
-    Vector3f ray;
+    vector<Vector3f> rays;
     Shade shade;
 
     float completed = 0;
@@ -53,14 +60,21 @@ void Camera::castRays(shared_ptr<Window> window, shared_ptr<Scene> scene)
     for (int i = 0; i < window->getWidth(); i++) {
         for (int j = 0; j < window->getHeight(); j++) {
             
+            Vector3f color = Vector3f(0,0,0);
+
             // Generate ray direction from camera into scene
-            ray = calcRay(i, j, window);
+            rays = calcRays(i, j, window);
 
             // Cast ray to get pixel color 
-            shade = castRay(NULL, location, ray, scene, !UNIT_TEST, REFL_RECURSES, NULL, PRIMARY);
+            for (int k = 0; k < rays.size(); k++) {
+                shade = castRay(NULL, location, rays[k], scene, !UNIT_TEST, REFL_RECURSES, NULL, PRIMARY);
+                color += shade.getColor();
+            }
+            
+            color /= rays.size();
 
             // Set color of pixel
-            window->setPixel(i, j, shade.getColor()); 
+            window->setPixel(i, j, color); 
 
             //completed += inc;
         }
@@ -74,10 +88,8 @@ void Camera::unitTests(shared_ptr<Window> window, shared_ptr<Scene> scene)
     cout << endl << endl;
     cout << "Running unit tests ..." << endl << endl;
 
-    unitTest(320, 145, window, scene);
-    unitTest(315, 185, window, scene);
-    unitTest(220, 240, window, scene);
-
+    unitTest(325, 240, window, scene);
+    unitTest(330, 250, window, scene);
 }
 
 void Camera::unitTest(int i, int j, shared_ptr<Window> window, shared_ptr<Scene> scene)
@@ -86,9 +98,10 @@ void Camera::unitTest(int i, int j, shared_ptr<Window> window, shared_ptr<Scene>
     
     shared_ptr<stack<PrintOut> > log = make_shared<stack<PrintOut> >();
     
-    Vector3f ray = calcRay(i, j, window);
-
-    Shade s = castRay(NULL, location, ray, scene, UNIT_TEST, REFL_RECURSES, log, PRIMARY);
+    // Generate ray direction from camera into scene
+    vector<Vector3f> rays = calcRays(i, j, window);
+    
+    Shade s = castRay(NULL, location, rays[0], scene, UNIT_TEST, REFL_RECURSES, log, PRIMARY);
 
     Tools::printVec3("Color", s.getColor());
     cout << "------------" << endl << endl;
@@ -109,23 +122,47 @@ void Camera::print()
     Tools::printVec3("lookAt", lookAt);
 }
 
-Vector3f Camera::calcRay(int i, int j, shared_ptr<Window> window)
+Vector3f Camera::calcRay(float dx, float dy, shared_ptr<Window> window)
 {
     // Use window to construct ray vectors
-    float rght = right.norm() / 2;
-    float left = -rght;
-
-    float top = up.norm() / 2;
-    float bottom = -top;
-
-    float us = left + (rght - left)*(i + 0.5)/window->getWidth();
-    float vs = bottom + (top - bottom)*(j + 0.5)/window->getHeight();
+    float us = left + (rght - left) * (dx / window->getWidth());
+    float vs = bottom + (top - bottom) * (dy / window->getHeight());
     
     Vector3f ray = us*right.normalized() + vs*up.normalized() + (lookAt - location).normalized(); 
     
     ray.normalize();
     
     return ray;
+}
+
+vector<Vector3f> Camera::calcRays(int i, int j, shared_ptr<Window> window)
+{
+    vector<Vector3f> rays;
+    Vector3f ray;
+    
+    float s = 1.0 / (AA_res + 1);
+    float d = 1.0 / AA_res;   
+    
+    for (int x = 1; x <= AA_res; x++) {
+        for (int y = 1; y <= AA_res; y++) {
+
+            float dx = i;
+            float dy = j;
+
+            if (jitter) {
+                dx += Tools::randRange((x-1) * d, x*d);
+                dy += Tools::randRange((y-1) * d, y*d);
+            } else {
+                dx += x*s;
+                dy += y*s;
+            }
+
+            ray = calcRay(dx, dy, window);
+            rays.push_back(ray);
+        }
+    }
+
+    return rays;
 }
 
 Shade Camera::castRay(shared_ptr<Object> avoid, const Vector3f& loc, const Vector3f& ray, shared_ptr<Scene> scene, bool unitTest, int iteration, shared_ptr<stack<PrintOut> > log, int type) {
@@ -145,7 +182,8 @@ Shade Camera::castRay(shared_ptr<Object> avoid, const Vector3f& loc, const Vecto
 
         // Determine point in space which ray intersects object
         Vector3f hitPoint = loc + t * ray;
-        
+
+
         if (!object->isRefractive()) {
            
             if (!object->isReflective()) {
@@ -221,7 +259,6 @@ Shade Camera::calcLocal(shared_ptr<Scene> scene, shared_ptr<Object> object, cons
         Vector3f hit2Light = light->getPosition() - hitPoint;
         Vector3f feeler = hit2Light.normalized();
         Vector3f n = object->getNormal(hitPoint);
-
         Vector3f normal = (object->getInvXForm() * Vector4f(n(0), n(1), n(2), 0)).head(3);
    
         diffuse = calcDiffuse(object, normal, feeler, light);

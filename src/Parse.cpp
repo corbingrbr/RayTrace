@@ -30,7 +30,7 @@ stringstream Parse::ss;
 string Parse::line;
 string Parse::token;
 
-bool Parse::parse(char *file)
+bool Parse::parse(char *file, int aa_res, bool jitter)
 {
     // Open file and set up stream
     in.open(file);
@@ -56,7 +56,7 @@ bool Parse::parse(char *file)
         getToken();
             
         if (token == "camera") { 
-            camera = parseCamera(); 
+            camera = parseCamera(aa_res, jitter); 
         }
         else if (token == "light_source") { 
             scene->addLight(parseLight()); 
@@ -113,7 +113,7 @@ void Parse::skipRest()
     nextLine();
 }
 
- shared_ptr<Camera> Parse::parseCamera()
+shared_ptr<Camera> Parse::parseCamera(int aa_res, bool jitter)
 {
     nextLine();
     ss >> token; // Discard first word
@@ -133,7 +133,7 @@ void Parse::skipRest()
 
     nextLine();
 
-    return make_shared<Camera>(location, up, right, look_at);
+    return make_shared<Camera>(location, up, right, look_at, aa_res, jitter);
 }
 
 shared_ptr<Light> Parse::parseLight()

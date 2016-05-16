@@ -6,6 +6,7 @@
 #include <Eigen/Dense>
 #include <iostream>
 #include <memory>
+#include <cstdlib>
 
 using namespace Eigen;
 using namespace std;
@@ -67,4 +68,11 @@ void Tools::clampVec(Vector3f *v, float f)
     if ((*v)(0) > f) { (*v)(0) = f; }
     if ((*v)(1) > f) { (*v)(1) = f; }
     if ((*v)(2) > f) { (*v)(2) = f; }
+}
+
+float Tools::randRange(float floor, float ceiling) 
+{
+    float range = ceiling - floor;
+
+    return floor + range * (rand() / (float)RAND_MAX);
 }
