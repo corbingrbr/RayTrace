@@ -18,6 +18,7 @@ public:
     float intersection(const Eigen::Vector3f& e, const Eigen::Vector3f& d);
     Eigen::Vector3f getNormal(const Eigen::Vector3f& hitPoint);
     void print();
+    int getID();
 
 private:
 

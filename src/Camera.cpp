@@ -8,6 +8,7 @@
 #include "Finish.h"
 #include "Shade.h"
 #include "PrintOut.h"
+#include "HitRecord.h"
 
 #include <memory>
 #include <iostream>
@@ -54,7 +55,6 @@ void Camera::castRays(shared_ptr<Window> window, shared_ptr<Scene> scene)
     float completed = 0;
     //float inc = 100.00 / (window->getWidth() * window->getHeight());
 
-    cout << setprecision(1) << fixed;
     cout << "Casting rays ..." << flush;
 
     for (int i = 0; i < window->getWidth(); i++) {
@@ -88,8 +88,8 @@ void Camera::unitTests(shared_ptr<Window> window, shared_ptr<Scene> scene)
     cout << endl << endl;
     cout << "Running unit tests ..." << endl << endl;
 
-    unitTest(325, 240, window, scene);
-    unitTest(330, 250, window, scene);
+    unitTest(399, 280, window, scene);
+    //unitTest(240, 280, window, scene);
 }
 
 void Camera::unitTest(int i, int j, shared_ptr<Window> window, shared_ptr<Scene> scene)
@@ -142,7 +142,7 @@ vector<Vector3f> Camera::calcRays(int i, int j, shared_ptr<Window> window)
     
     float s = 1.0 / (AA_res + 1);
     float d = 1.0 / AA_res;   
-    
+
     for (int x = 1; x <= AA_res; x++) {
         for (int y = 1; y <= AA_res; y++) {
 
@@ -168,9 +168,9 @@ vector<Vector3f> Camera::calcRays(int i, int j, shared_ptr<Window> window)
 Shade Camera::castRay(shared_ptr<Object> avoid, const Vector3f& loc, const Vector3f& ray, shared_ptr<Scene> scene, bool unitTest, int iteration, shared_ptr<stack<PrintOut> > log, int type) {
 
     // Fire ray into scene to detect objects
-    pair<float, shared_ptr<Object> > hitObject = intersectRay(avoid, loc, ray, scene);
-    shared_ptr<Object> object = hitObject.second; // object which is intersected by ray
-    float t = hitObject.first; // intersection is t-distance along ray
+    HitRecord hitRecord = intersectRay(avoid, loc, ray, scene);
+    shared_ptr<Object> object = hitRecord.getObject();
+    float t = hitRecord.getT();
 
     Shade color;
 
@@ -204,7 +204,7 @@ Shade Camera::castRay(shared_ptr<Object> avoid, const Vector3f& loc, const Vecto
                     localColor ^= (1 - reflect);
                     reflectColor *= reflect;
                     color = localColor + reflectColor;
-            }
+s            }
         
         } else {  
             color = calcRefraction(scene, object, iteration, hitPoint, ray, unitTest, log);
@@ -222,7 +222,7 @@ Shade Camera::castRay(shared_ptr<Object> avoid, const Vector3f& loc, const Vecto
         PrintOut p;
         
         if (object != NULL) {
-          p = PrintOut(HIT, type, loc, ray, t, color.getAmbient(), color.getDiffuse(), color.getSpecular());
+            p = PrintOut(HIT, type, loc, ray, t, color.getAmbient(), color.getDiffuse(), color.getSpecular());
         } else {
           p = PrintOut(!HIT, type, loc, ray);   
         }
@@ -239,9 +239,9 @@ bool Camera::isShadowed(shared_ptr<Scene> scene, shared_ptr<Light> light, shared
     Vector3f hit2Light = light->getPosition() - hitPoint;
     Vector3f feeler = hit2Light.normalized();
     
-    pair<float, shared_ptr<Object> > shadowObject = intersectRay(avoid, hitPoint, feeler, scene);
+    HitRecord hitRecord = intersectRay(avoid, hitPoint, feeler, scene);
 
-    return shadowObject.second != NULL && (shadowObject.first * feeler).norm() < hit2Light.norm();
+    return hitRecord.getObject() != NULL && (hitRecord.getT() * feeler).norm() < hit2Light.norm();
 }
 
 Shade Camera::calcLocal(shared_ptr<Scene> scene, shared_ptr<Object> object, const Vector3f& hitPoint)
@@ -344,7 +344,7 @@ Shade Camera::calcRefraction(shared_ptr<Scene> scene, shared_ptr<Object> object,
     return color;
 }
 
-pair<float, shared_ptr<Object> > Camera::intersectRay(shared_ptr<Object> avoid, const Vector3f& loc, const Vector3f& ray, shared_ptr<Scene> scene)
+HitRecord Camera::intersectRay(shared_ptr<Object> avoid, const Vector3f& loc, const Vector3f& ray, shared_ptr<Scene> scene)
 {
     return scene->intersections(avoid, loc, ray);
 }

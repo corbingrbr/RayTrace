@@ -39,14 +39,14 @@ bool Parse::parse(char *file, int aa_res, bool jitter)
         cout << "Cannot read " << file << endl;
         return false;
     }
-    
+   
     cout << endl;
     cout << "Parsing ... "; 
     
     while (1) {
 
         nextLine();
-      
+
         if (in.eof()) { break; }
         
         if(line.size() < 2) { continue; }
@@ -54,9 +54,9 @@ bool Parse::parse(char *file, int aa_res, bool jitter)
         if (line.at(0) == '/') { continue; }
         
         getToken();
-            
+
         if (token == "camera") { 
-            camera = parseCamera(aa_res, jitter); 
+            camera = parseCamera(aa_res, jitter);
         }
         else if (token == "light_source") { 
             scene->addLight(parseLight()); 
@@ -75,7 +75,6 @@ bool Parse::parse(char *file, int aa_res, bool jitter)
             
             return false;
         }
-        
     }
     
     cout << "Done" << endl;
@@ -96,8 +95,8 @@ void Parse::emptyStream()
 
 void Parse::nextLine()
 {
-    getline(in, line);
     emptyStream();
+    getline(in, line);
     ss << line;
 }
     
@@ -138,7 +137,6 @@ shared_ptr<Camera> Parse::parseCamera(int aa_res, bool jitter)
 
 shared_ptr<Light> Parse::parseLight()
 {
-    getToken(); // Curly brace
     Vector3f position = parseVector3f();
     
     getToken(); // color
@@ -146,84 +144,27 @@ shared_ptr<Light> Parse::parseLight()
     
     Vector3f color = parseVector3f();
     
-    nextLine();
-    
     return make_shared<Light>(position, color);
 }
 
+///////////////////////////////////////////////////////////////////////
+
 shared_ptr<Sphere> Parse::parseSphere()
 {
-    getToken(); // CurlyBrace
+    getToken(); // {
+
     Vector3f position = parseVector3f();
     
     getToken();
     float radius = atof(token.c_str());
     nextLine();
     
-    shared_ptr<Pigment> pigment = parsePigment();  
-    nextLine();
-
-    shared_ptr<Finish> finish = parseFinish();
-    nextLine();
-    
-    Matrix4f xform = parseTransforms();
-    
-
-    return make_shared<Sphere>(position, radius, pigment, finish, xform);
-}
-
-shared_ptr<Plane> Parse::parsePlane()
-{
-    getToken(); // {
-
-    Vector3f normal = parseVector3f();
-    getToken();
-    float distance = atof(token.c_str());
-    nextLine();
-
-    shared_ptr<Pigment> pigment = parsePigment();    
-    nextLine();
-
-    shared_ptr<Finish> finish = parseFinish();
-    nextLine();
-
-    Matrix4f xform = parseTransforms();
-   
-    return make_shared<Plane>(normal, distance, pigment, finish, xform);
-}
-
-shared_ptr<Triangle> Parse::parseTriangle()
-{
-     auto vertices = new Vector3f[3];
-
-     nextLine();
-     vertices[0] = parseVector3f();
-     nextLine();
-     vertices[1] = parseVector3f();
-     nextLine();
-     vertices[2] = parseVector3f();
-     nextLine();
-
-     shared_ptr<Pigment> pigment = parsePigment();
-     
-     nextLine();
-     
-     shared_ptr<Finish> finish = parseFinish();
-
-     Matrix4f xform = parseTransforms();
-
-     shared_ptr<Triangle> triangle = make_shared<Triangle>(vertices, pigment, finish, xform);
-     triangle->init();
-     
-     return triangle;
-}
-
-Matrix4f Parse::parseTransforms() 
-{
+    shared_ptr<Pigment> pigment;
+    shared_ptr<Finish> finish;
     Matrix4f xform = Matrix4f::Identity();
-    
+
     getToken();
-    
+
     while (token != "}") {
         
         if (token == "scale") {
@@ -233,15 +174,101 @@ Matrix4f Parse::parseTransforms()
             xform = rotate(parseVector3f()) * xform;
         } else if (token == "translate"){
             xform = translate(parseVector3f()) * xform;
+        } else if (token == "pigment") {
+            pigment = parsePigment();
+        } else if (token == "finish") {
+            finish = parseFinish();
         } else {
-            cout << "Unknown transform " << token << endl;
+            cout << "PARSE ERROR: Unknown Attribute -> " << token << endl;
         }
         
         nextLine();
         getToken();
     }
 
-    return xform.inverse();
+    return make_shared<Sphere>(position, radius, pigment, finish, xform.inverse());
+}
+
+shared_ptr<Plane> Parse::parsePlane()
+{
+    Vector3f normal = parseVector3f();
+    getToken();
+    float distance = atof(token.c_str());
+    nextLine();
+
+    shared_ptr<Pigment> pigment;
+    shared_ptr<Finish> finish;
+    Matrix4f xform = Matrix4f::Identity();
+
+    getToken();
+
+    while (token != "}") {
+        
+        if (token == "scale") {
+            xform = scale(parseVector3f()) * xform;
+        } else if (token == "rotate") {
+            // Only rotates about one axis at a time
+            xform = rotate(parseVector3f()) * xform;
+        } else if (token == "translate"){
+            xform = translate(parseVector3f()) * xform;
+        } else if (token == "pigment") {
+            pigment = parsePigment();
+        } else if (token == "finish") {
+            finish = parseFinish();
+        } else {
+            cout << "PARSE ERROR: Unknown Attribute -> " << token << endl;
+        }
+        
+        nextLine();
+        getToken();
+    }
+
+    return make_shared<Plane>(normal, distance, pigment, finish, xform.inverse());
+}
+
+shared_ptr<Triangle> Parse::parseTriangle()
+{
+    auto vertices = new Vector3f[3];
+
+    nextLine();
+    vertices[0] = parseVector3f();
+    nextLine();
+    vertices[1] = parseVector3f();
+    nextLine();
+    vertices[2] = parseVector3f();
+    nextLine();
+    
+    shared_ptr<Pigment> pigment;
+    shared_ptr<Finish> finish;
+    Matrix4f xform = Matrix4f::Identity();
+    
+    getToken();
+    
+    while (token != "}") {
+        
+        if (token == "scale") {
+            xform = scale(parseVector3f()) * xform;
+        } else if (token == "rotate") {
+             // Only rotates about one axis at a time
+            xform = rotate(parseVector3f()) * xform;
+        } else if (token == "translate"){
+            xform = translate(parseVector3f()) * xform;
+        } else if (token == "pigment") {
+             pigment = parsePigment();
+        } else if (token == "finish") {
+            finish = parseFinish();
+        } else {
+            cout << "PARSE ERROR: Unknown Attribute -> " << token << endl;
+        }
+        
+        nextLine();
+        getToken();
+    }
+
+    shared_ptr<Triangle> triangle = make_shared<Triangle>(vertices, pigment, finish, xform.inverse());
+     triangle->init();
+     
+     return triangle;
 }
 
 Matrix4f Parse::translate(Vector3f t)
@@ -256,32 +283,33 @@ Matrix4f Parse::translate(Vector3f t)
 
 Matrix4f Parse::rotate(Vector3f r) 
 {
-    float deg2rad = M_PI / 180;
-
-    Matrix4f E = Matrix4f::Identity();
     
-    if (r(0) > 0) { // X - Axis
-        
-        E(1,1) = cos(r(1)*deg2rad);
-        E(2,1) = sin(r(1)*deg2rad);
-        E(1,2) = -sin(r(1)*deg2rad);
-        E(2,2) = cos(r(1)*deg2rad);
+    float deg2rad = M_PI / 180;
+    Matrix4f E = Matrix4f::Identity();
 
+
+    if (r(0) > 0) { // X - Axis
+
+        E(1,1) = cos(r(0)*deg2rad);
+        E(2,1) = -sin(r(0)*deg2rad);
+        E(1,2) = sin(r(0)*deg2rad);
+        E(2,2) = cos(r(0)*deg2rad);
         
     } else if (r(1) > 0) { // Y - Axis
-       
-        E(0,0) = cos(r(0)*deg2rad);
-        E(2,0) = -sin(r(0)*deg2rad);
-        E(0,2) = sin(r(0)*deg2rad);
-        E(2,2) = cos(r(0)*deg2rad);
+        
+        E(0,0) = cos(r(1)*deg2rad);
+        E(2,0) = sin(r(1)*deg2rad);
+        E(0,2) = -sin(r(1)*deg2rad);
+        E(2,2) = cos(r(1)*deg2rad);
+
         
     } else { // Z - Axis
         
         E(0,0) = cos(r(2)*deg2rad);
-        E(1,0) = sin(r(2)*deg2rad);
-        E(0,1) = -sin(r(2)*deg2rad);
+        E(1,0) = -sin(r(2)*deg2rad);
+        E(0,1) = sin(r(2)*deg2rad);
         E(1,1) = cos(r(2)*deg2rad);
-        
+
     }
 
     return E;
@@ -289,6 +317,7 @@ Matrix4f Parse::rotate(Vector3f r)
 
 Matrix4f Parse::scale(Vector3f s) 
 {
+    //Tools::printVec3("Scale", s);
   	Matrix4f E = Matrix4f::Identity();
 	E(0,0) = s(0);
 	E(1,1) = s(1);
@@ -303,15 +332,15 @@ Vector3f Parse::parseVector3f()
     string s;
 
     ss >> s;
-    s = s.substr(1, s.find(","));
+    int ndx = s.at(0) == '{' ? 2 : 1;
+    
+    s = s.substr(ndx, s.length());
     x = atof(s.c_str());
 
     ss >> s;
-    s = s.substr(0, s.find(","));
     y = atof(s.c_str());
 
     ss >> s;
-    s = s.substr(0, s.find(">"));
     z = atof(s.c_str());
     
     return Vector3f(x,y,z);
@@ -323,19 +352,18 @@ Vector4f Parse::parseVector4f()
     string s;
 
     ss >> s;
-    s = s.substr(1, s.find(","));
+    int ndx = s.at(0) == '{' ? 2 : 1;
+
+    s = s.substr(ndx, s.length());
     x = atof(s.c_str());
 
     ss >> s;
-    s = s.substr(0, s.find(","));
     y = atof(s.c_str());
 
     ss >> s;
-    s = s.substr(0, s.find(","));
     z = atof(s.c_str());
 
     ss >> s;
-    s = s.substr(0, s.find(">"));
     w = atof(s.c_str());
     
     return Vector4f(x,y,z,w);
@@ -345,9 +373,7 @@ shared_ptr<Pigment> Parse::parsePigment()
 {
     string s;
 
-    ss >> s; // pigment
-    ss >> s; // {
-    ss >> s; // color
+    ss >> s; // {color
     ss >> s; // rgb || rgbf
 
     if (s == "rgbf") {
@@ -372,15 +398,12 @@ shared_ptr<Finish> Parse::parseFinish()
     float refraction = 0.0;
     float ior = 0.0;
 
-    ss >> s; // finish
-    ss >> s; // {
     ss >> s;
+    s = s.substr(1, s.length()); // Removal of "{"
     
-
-    while (s != "}") {
+    while (1) {
 
         string type = s;
-
         ss >> s;
 
         if (type == "ambient") {
@@ -400,6 +423,8 @@ shared_ptr<Finish> Parse::parseFinish()
         } else {
             cout << "Encountered unkown pigment component " << type << endl;
         }
+
+        if (s.find("}") != string::npos) { break; } // End of list
 
         ss >> s;
     }

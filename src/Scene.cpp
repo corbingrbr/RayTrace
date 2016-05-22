@@ -2,6 +2,7 @@
 
 #include "Object.h"
 #include "Light.h"
+#include "HitRecord.h"
 
 #include <vector>
 #include <memory>
@@ -54,7 +55,7 @@ void Scene::printObjects()
     }
 }
 
-pair<float, shared_ptr<Object> > Scene::intersections(shared_ptr<Object> avoid, const Vector3f& p0, const Vector3f& d)
+HitRecord Scene::intersections(shared_ptr<Object> avoid, const Vector3f& p0, const Vector3f& d)
 {
     float best = numeric_limits<float>::infinity();
     float t;
@@ -80,6 +81,6 @@ pair<float, shared_ptr<Object> > Scene::intersections(shared_ptr<Object> avoid, 
         }
     }
 
-    return make_pair(best, hitObject);
+    return HitRecord(best, hitObject);
 }
 

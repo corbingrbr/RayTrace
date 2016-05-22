@@ -12,6 +12,7 @@ class Object;
 class Light;
 class Shade;
 class PrintOut;
+class HitRecord;
 
 class Camera 
 {
@@ -31,7 +32,7 @@ private:
     void unitTest(int i, int j, std::shared_ptr<Window> window, std::shared_ptr<Scene> scene);
     Eigen::Vector3f calcRay(float dx, float dy, std::shared_ptr<Window> window);
     std::vector<Eigen::Vector3f> calcRays(int i, int j, std::shared_ptr<Window> window);
-    std::pair<float, std::shared_ptr<Object> > intersectRay(std::shared_ptr<Object> avoid, const Eigen::Vector3f& loc, const Eigen::Vector3f& ray, std::shared_ptr<Scene> scene);
+    HitRecord intersectRay(std::shared_ptr<Object> avoid, const Eigen::Vector3f& loc, const Eigen::Vector3f& ray, std::shared_ptr<Scene> scene);
     Shade castRay(std::shared_ptr<Object> avoid, const Eigen::Vector3f& loc, const Eigen::Vector3f& ray, std::shared_ptr<Scene> scene, bool unitTest, int iteration, std::shared_ptr<std::stack<PrintOut> > log, int type);
     bool isShadowed(std::shared_ptr<Scene> scene, std::shared_ptr<Light> light, std::shared_ptr<Object> avoid, const Eigen::Vector3f& hitPoint);
     Shade calcLocal(std::shared_ptr<Scene> scene, std::shared_ptr<Object> object, const Eigen::Vector3f& hitPoint);

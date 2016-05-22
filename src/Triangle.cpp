@@ -94,6 +94,11 @@ void Triangle::print()
     Tools::printFinish(finish);
 }
 
+int Triangle::getID()
+{
+    return Object::TRIANGLE;
+}
+
 void Triangle::calcNormalNPosition()
 {
     Vector3f v1 = vertices[B] - vertices[A];

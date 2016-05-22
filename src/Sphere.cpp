@@ -65,3 +65,8 @@ void Sphere::print()
     Tools::printFinish(finish);
   
 }
+
+int Sphere::getID()
+{
+    return Object::SPHERE;
+}

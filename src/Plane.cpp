@@ -48,4 +48,9 @@ void Plane::print()
     Tools::printPigment(pigment);
     Tools::printFinish(finish);
 }
+
+int Plane::getID()
+{
+    return Object::PLANE;
+}
     

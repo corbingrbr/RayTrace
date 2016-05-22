@@ -35,7 +35,6 @@ private:
     static std::shared_ptr<Plane> parsePlane();
     static std::shared_ptr<Triangle> parseTriangle();
 
-    static Eigen::Matrix4f parseTransforms();
     static Eigen::Matrix4f translate(Eigen::Vector3f t);
     static Eigen::Matrix4f rotate(Eigen::Vector3f r);
     static Eigen::Matrix4f scale(Eigen::Vector3f s);

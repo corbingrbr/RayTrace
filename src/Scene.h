@@ -9,6 +9,7 @@
 
 class Object;
 class Light;
+class HitRecord;
 
 class Scene {
   
@@ -20,7 +21,7 @@ public:
     void addLight(std::shared_ptr<Light> light);
     std::vector<std::shared_ptr<Light> > getLights();
     void printObjects();
-    std::pair<float, std::shared_ptr<Object> > intersections(std::shared_ptr<Object> avoid, const Eigen::Vector3f& p0, const Eigen::Vector3f& d);
+    HitRecord intersections(std::shared_ptr<Object> avoid, const Eigen::Vector3f& p0, const Eigen::Vector3f& d);
   
 private:
 

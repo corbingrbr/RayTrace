@@ -19,6 +19,7 @@ public:
     Eigen::Vector3f getNormal(const Eigen::Vector3f& hitPoint);
     void init();
     void print();
+    int getID();
     
 private:
 

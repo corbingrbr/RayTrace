@@ -5,7 +5,7 @@ TARGET = raytrace
 CC = g++
 CFLAGS = -std=c++11 -g -O3 -DCMAKE_BUILD_TYPE=Release
 
-LINKER = g++ -o
+LINKER = g++ -o 
 
 SRCDIR = src
 OBJDIR = o

@@ -53,7 +53,6 @@ void writeImage(string povfile)
 
 int main(int argc, char **argv)
 {
-
     if (argc < 5 || argc >= 6) { 
         cout << "Must supply width, height, input_file, and anti-aliasing (0/1)" << endl;
         return 0;

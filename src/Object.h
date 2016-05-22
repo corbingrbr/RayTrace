@@ -10,6 +10,8 @@ class Object {
 
 public:
 
+    enum Shape { SPHERE, TRIANGLE, BOX, PLANE };
+
 Object(std::shared_ptr<Pigment> pigment, std::shared_ptr<Finish> finish, Eigen::Matrix4f invXForm) 
     : pigment(pigment),
         finish(finish),
@@ -20,6 +22,7 @@ Object(std::shared_ptr<Pigment> pigment, std::shared_ptr<Finish> finish, Eigen::
     virtual float intersection(const Eigen::Vector3f& p0, const Eigen::Vector3f& d) = 0;
     virtual Eigen::Vector3f getNormal(const Eigen::Vector3f& hitPoint) = 0;
     virtual void print() = 0;
+    virtual int getID() = 0;
     std::shared_ptr<Pigment> getPigment() { return pigment; };
     std::shared_ptr<Finish> getFinish() { return finish; }
     Eigen::Vector3f getPosition() { return position; }
@@ -39,7 +42,7 @@ Object(std::shared_ptr<Pigment> pigment, std::shared_ptr<Finish> finish, Eigen::
 
 
 protected:
-    
+
     Eigen::Vector3f position;
     Eigen::Matrix4f invXForm;
     std::shared_ptr<Pigment> pigment;
