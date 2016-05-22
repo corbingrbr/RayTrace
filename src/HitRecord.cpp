@@ -3,6 +3,10 @@
 
 using namespace std;
 
+HitRecord::HitRecord()
+{
+}
+
 HitRecord::HitRecord(float t, shared_ptr<Object> object)
     : t(t),
       object(object)

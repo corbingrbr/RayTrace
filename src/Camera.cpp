@@ -204,7 +204,7 @@ Shade Camera::castRay(shared_ptr<Object> avoid, const Vector3f& loc, const Vecto
                     localColor ^= (1 - reflect);
                     reflectColor *= reflect;
                     color = localColor + reflectColor;
-s            }
+            }
         
         } else {  
             color = calcRefraction(scene, object, iteration, hitPoint, ray, unitTest, log);

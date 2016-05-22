@@ -1,8 +1,10 @@
 #include "Scene.h"
 
 #include "Object.h"
+#include "Plane.h"
 #include "Light.h"
 #include "HitRecord.h"
+#include "BVHTree.h"
 
 #include <vector>
 #include <memory>
@@ -26,6 +28,11 @@ Scene::~Scene()
 void Scene::addObject(shared_ptr<Object> object)
 {
     objects.push_back(object);
+}
+
+void Scene::addPlane(shared_ptr<Plane> plane) 
+{
+    planes.push_back(plane);
 }
 
 void Scene::addLight(shared_ptr<Light> light)
@@ -57,30 +64,39 @@ void Scene::printObjects()
 
 HitRecord Scene::intersections(shared_ptr<Object> avoid, const Vector3f& p0, const Vector3f& d)
 {
+    HitRecord hrTree;
+    bool hitTree;
+    
+    // Check tree
+    hitTree = bvhTree.intersection(avoid, p0, d, &hrTree);
+
+    // Check planes
     float best = numeric_limits<float>::infinity();
     float t;
-    shared_ptr<Object> hitObject = NULL;
+    shared_ptr<Object> object;
 
-    Vector4f pXForm = Vector4f(p0(0), p0(1), p0(2), 1);
-    Vector4f dXForm = Vector4f(d(0), d(1), d(2), 0);
+    for (unsigned int i = 0; i < planes.size(); i++) {
+        float t = planes[i]->intersection(p0, d);
 
-    for (unsigned int i = 0; i < objects.size(); i++) {
-        
-        if (objects[i] != avoid) {
-            Matrix4f inv = objects[i]->getInvXForm();
-            
-            Vector4f modelp0 = inv * pXForm;
-            Vector4f modeld = inv * dXForm;
-
-            t = objects[i]->intersection(modelp0.head(3), modeld.head(3));
-             
-             if ( t >= 0.0f && t < best) {
-                 best = t;
-                 hitObject = objects[i];
-             }
+        if ( t >= 0 && t < best && planes[i] != avoid ) {
+            best = t;
+            object = planes[i];
         }
     }
 
-    return HitRecord(best, hitObject);
+    // REFACTOR LATER
+
+    if (!hitTree && best < 0) {
+        
+        return HitRecord(-1.0, NULL);
+    
+    } else {
+       
+        if (!hitTree) { return HitRecord(best, object); }
+        if (best < 0) { return hrTree; }
+        
+        return hrTree.getT() < best ? hrTree : HitRecord(best, object);
+    }
 }
+
 

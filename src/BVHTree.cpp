@@ -1,11 +1,14 @@
 #include "BVHTree.h"
 
 #include "BoundingBox.h"
+#include "HitRecord.h"
 
 #include <Eigen/Dense>
 #include <vector>
 #include <memory>
 #include <algorithm>
+
+#define HIT true
 
 using namespace std;
 using namespace Eigen;
@@ -21,65 +24,101 @@ BVHTree::~BVHTree()
 
 void BVHTree::build(vector<shared_ptr<Object> > objects)
 {
-    // Filter out planes and wrap remaining objects in bounding boxes
-    vector<BoundingBox> boxes = filterPlanes(objects);
+    // Wrap objects up into bounding boxes
+    boxUp(objects);
     
-    constructTree(boxes);     
+    // Generate tree
+    constructTree();     
 }
 
-bool BVHTree::intersection(Vector3f& pos, Vector3f& ray, HitRecord *hitRecord)
+bool BVHTree::intersection(shared_ptr<Object> avoid, const Vector3f& pos, const Vector3f& ray, HitRecord *hr)
 {
-    if (root == NULL && planes.size() == 0) { return false; }
+    return intersectHelp(avoid, pos, ray, root, hr); 
+}
 
-    
+bool BVHTree::intersectHelp(shared_ptr<Object> avoid, const Vector3f& pos, const Vector3f& ray, BVHNode *node, HitRecord *hitRecord)
+{
+    if (node == NULL) { return false; }
 
+    if ((node->bb)->intersection(pos, ray)) {
+        // Check if leaf
+        if (node->left == NULL && node->right == NULL) {
+            
+            float t = node->bb->getObject()->intersection(pos, ray);
+            
+            if (t >= 0 && node->bb->getObject() != avoid) {
+                *hitRecord = HitRecord(t, node->bb->getObject());
+                return HIT;
+            } 
+              
+            return !HIT;
+
+        } else {
+            // Either a node is a leaf, or it has two children
+             HitRecord lHR, rHR;
+             bool lHit, rHit;
+             
+             lHit = intersectHelp(avoid, pos, ray, node->left, &lHR);
+             rHit = intersectHelp(avoid, pos, ray, node->right, &rHR);
+             
+             if (!lHit && !rHit) { 
+                 return !HIT; 
+             } else if (!lHit) { 
+                 *hitRecord = rHR; 
+             } else if (!rHit) { 
+                 *hitRecord = lHR; 
+             } else {
+                 *hitRecord = lHR.getT() < rHR.getT() ? lHR : rHR;
+             }
+             
+             return HIT;    
+        }
+    }
+
+    return !HIT;
 }
 
 void BVHTree::destroy()
 {   
 }
 
-fptr BVHTree::getSortAlg(int axis) {
+void *BVHTree::getSortAlg(int axis) {
     switch (axis) {
-    case X_AXIS : return sortAlgX;
-    case Y_AXIS : return sortAlgY;
-    case Z_AXIS : return sortAlgZ;
+    case X_AXIS : return (void *)sortAlgX;
+    case Y_AXIS : return (void *)sortAlgY;
+    case Z_AXIS : return (void *)sortAlgZ;
     }
 }
 
-bool BVHTree::sortAlgX(BoundingBox& b1, BoundingBox& b2)
+bool BVHTree::sortAlgX(BoundingBox b1, BoundingBox b2)
 {
     return b1.getCenter()(X) > b2.getCenter()(X);
 }
 
-bool BVHTree::sortAlgY(BoundingBox& b1, BoundingBox& b2)
+bool BVHTree::sortAlgY(BoundingBox b1, BoundingBox b2)
 {
     return b1.getCenter()(Y) > b2.getCenter()(Y);
 }
 
-bool BVHTree::sortAlgZ(BoundingBox& b1, BoundingBox& b2)
+bool BVHTree::sortAlgZ(BoundingBox b1, BoundingBox b2)
 {
     return b1.getCenter()(Z) > b2.getCenter()(Z);
 }
 
-vector<BoundingBox> BVHTree::filterPlanes(vector<shared_ptr<Object> > objects)
+void BVHTree::boxUp(vector<shared_ptr<Object> > objects)
 {
     for (unsigned int i = 0; i < objects.size(); i++) {
-        if (objects[i]->getID() == Object::PLANE) {
-            planes.push_back(object[i]);
-        } else {
-            boxes.push_back(BoundingBox(object[i]));
+            boxes.push_back(BoundingBox(objects[i]));
             boxes[i].setup();
-        }
     }
 }
 
-void constructTree(vector<BoundingBox>& boxes) 
+void BVHTree::constructTree() 
 {
-    root = constructTreeHelper(boxes, 0, boxes.size(), X_AXIS);
+    root = constructHelp(0, boxes.size(), X_AXIS);
 }
 
-BVHNode *constructTreeHelper(vector<BoundingBox>& boxes, int start, int end, int axis)
+BVHNode *BVHTree::constructHelp(int start, int end, int axis)
 {
     BVHNode *node;
 
@@ -91,26 +130,26 @@ BVHNode *constructTreeHelper(vector<BoundingBox>& boxes, int start, int end, int
         node = new BVHNode();
         node->left = NULL;
         node->right = NULL;
-        node->bb = boxes[start];
+        node->bb = &(boxes[start]);
     
     } else {
     
         // Sort boxes by provided axis
-        sort(boxes.begin() + start, boxes.begin() + end, getSortAlg(axis));
-        
+        //sort(boxes.begin() + start, boxes.begin() + end, getSortAlg(axis));
+        sort(boxes.begin() + start, boxes.begin() + end, sortAlgX);        
         int middle = (start - end) / 2;
         
         node = new BVHNode();
         
-        node->left = constructTreeHelper(boxes, start, middle, (axis + 1) / NUM_AXIS);
-        node->right = constructTreeHelper(boxes, middle, end, (axis + 1) / NUM_AXIS);
-        node->bb = combine(node->left.getBB(), node->right.getBB());
+        node->left = constructHelp(start, middle, (axis + 1) / NUM_AXIS);
+        node->right = constructHelp(middle, end, (axis + 1) / NUM_AXIS);
+        node->bb = combine(node->left->bb, node->right->bb);
     }
 
     return node;
 }
 
-BoundingBox *combine(BoundingBox *left, BoundingBox *right)
+BoundingBox *BVHTree::combine(BoundingBox *left, BoundingBox *right)
 {
     Vector3f lmin = left->getMin();
     Vector3f lmax = left->getMax();
@@ -119,12 +158,12 @@ BoundingBox *combine(BoundingBox *left, BoundingBox *right)
 
     float minx, miny, minz, maxx, maxy, maxz;
 
-    minx = min(lmin(X), rmin(X));
-    miny = min(lmin(Y), rmin(Y));
-    minz = min(lmin(Z), rmin(Z));
-    maxx = max(lmax(X), rmax(X));
-    maxy = max(lmax(Y), rmax(Y));
-    maxz = max(lmax(Z), rmax(Z));
+    minx = min(lmin(0), rmin(0));
+    miny = min(lmin(1), rmin(1));
+    minz = min(lmin(2), rmin(2));
+    maxx = max(lmax(0), rmax(0));
+    maxy = max(lmax(1), rmax(1));
+    maxz = max(lmax(2), rmax(2));
       
     return new BoundingBox(Vector3f(minx, miny, minz), Vector3f(maxx, maxy, maxz));
 }
