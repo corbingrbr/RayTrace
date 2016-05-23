@@ -14,6 +14,7 @@ class Light;
 class Sphere;
 class Plane;
 class Triangle;
+class Box;
 class Pigment;
 class Finish;
 
@@ -34,6 +35,7 @@ private:
     static std::shared_ptr<Sphere> parseSphere();
     static std::shared_ptr<Plane> parsePlane();
     static std::shared_ptr<Triangle> parseTriangle();
+    static std::shared_ptr<Box> parseBox();
 
     static Eigen::Matrix4f translate(Eigen::Vector3f t);
     static Eigen::Matrix4f rotate(Eigen::Vector3f r);

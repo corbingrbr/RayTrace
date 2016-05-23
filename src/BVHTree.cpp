@@ -42,7 +42,7 @@ bool BVHTree::intersectHelp(shared_ptr<Object> avoid, const Vector3f& pos, const
     if ((node->bb)->intersection(pos, ray)) {
         // Check if leaf
         if (node->left == NULL && node->right == NULL) {
-            
+
             shared_ptr<Object> object = node->bb->getObject(); 
             
             if (object != avoid) { // Make sure its not object to avoid

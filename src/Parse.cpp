@@ -15,6 +15,7 @@
 #include "Plane.h"
 #include "Scene.h"
 #include "Triangle.h"
+#include "Box.h"
 #include "Pigment.h"
 #include "Finish.h"
 #include "Tools.h"
@@ -69,7 +70,10 @@ bool Parse::parse(char *file, int aa_res, bool jitter)
         }
         else if (token == "triangle") { 
             scene->addObject(parseTriangle()); 
-        }
+        } 
+        else if (token == "box") {
+            scene->addObject(parseBox());
+        } 
         else {
             cout << "Error: Unknown Statement ->" << token << endl;
             
@@ -264,9 +268,47 @@ shared_ptr<Triangle> Parse::parseTriangle()
     }
 
     shared_ptr<Triangle> triangle = make_shared<Triangle>(vertices, pigment, finish, xform.inverse());
-     triangle->init();
+    triangle->init();
      
-     return triangle;
+    return triangle;
+}
+
+shared_ptr<Box> Parse::parseBox()
+{
+    Vector3f min = parseVector3f();
+    Vector3f max = parseVector3f();
+
+    shared_ptr<Pigment> pigment;
+    shared_ptr<Finish> finish;
+    Matrix4f xform = Matrix4f::Identity();
+
+    nextLine();
+    
+    getToken();
+    
+    while (token != "}") {
+        
+        if (token == "scale") {
+            xform = scale(parseVector3f()) * xform;
+        } else if (token == "rotate") {
+             // Only rotates about one axis at a time
+            xform = rotate(parseVector3f()) * xform;
+        } else if (token == "translate"){
+            xform = translate(parseVector3f()) * xform;
+        } else if (token == "pigment") {
+             pigment = parsePigment();
+        } else if (token == "finish") {
+            finish = parseFinish();
+        } else {
+            cout << "PARSE ERROR: Unknown Attribute -> " << token << endl;
+        }
+        
+        nextLine();
+        getToken();
+    }
+
+    
+    return make_shared<Box>(min, max, pigment, finish, xform.inverse());
 }
 
 Matrix4f Parse::translate(Vector3f t)
@@ -284,7 +326,6 @@ Matrix4f Parse::rotate(Vector3f r)
     
     float deg2rad = M_PI / 180;
     Matrix4f E = Matrix4f::Identity();
-
 
     if (r(0) > 0) { // X - Axis
 
@@ -315,7 +356,6 @@ Matrix4f Parse::rotate(Vector3f r)
 
 Matrix4f Parse::scale(Vector3f s) 
 {
-    //Tools::printVec3("Scale", s);
   	Matrix4f E = Matrix4f::Identity();
 	E(0,0) = s(0);
 	E(1,1) = s(1);

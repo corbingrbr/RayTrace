@@ -81,7 +81,16 @@ HitRecord Scene::intersections(shared_ptr<Object> avoid, const Vector3f& p0, con
     shared_ptr<Object> object;
 
     for (unsigned int i = 0; i < planes.size(); i++) {
-        float t = planes[i]->intersection(p0, d);
+         
+        Vector4f pXForm = Vector4f(p0(0), p0(1), p0(2), 1);
+        Vector4f dXForm = Vector4f(d(0), d(1), d(2), 0);
+        
+        Matrix4f inv = planes[i]->getInvXForm();
+        
+        Vector4f modelpos = inv * pXForm;
+        Vector4f modelray = inv * dXForm;
+        
+        float t = planes[i]->intersection(modelpos.head(3), modelray.head(3));
 
         if ( t >= 0 && t < best && planes[i] != avoid ) {
             best = t;
