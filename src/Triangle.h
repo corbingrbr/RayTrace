@@ -23,14 +23,13 @@ public:
     void calcBounds(Eigen::Vector3f *min, Eigen::Vector3f *max);
 
 private:
-    
+    void calcMinMax(std::vector<Eigen::Vector4f> verts, float *minx, float *miny, float *minz, float *maxx, float *maxy, float *maxz);
+
     float getMinBound(int axis);
     float getMaxBound(int axis);
     void calcNormalNPosition();
 
     enum Vertices { A, B, C };
-
-    enum Dimensions { X, Y, Z };
 
     Eigen::Vector3f *vertices;
     Eigen::Vector3f normal;

@@ -116,15 +116,53 @@ void Triangle::calcBounds(Vector3f *min, Vector3f *max)
     
     float minx, miny, minz, maxx, maxy, maxz;
 
-    minx = getMinBound(X) - epsilon;
-    miny = getMinBound(Y) - epsilon;
-    minz = getMinBound(Z) - epsilon;
-    maxx = getMaxBound(X) + epsilon;
-    maxy = getMaxBound(Y) + epsilon;
-    maxz = getMaxBound(Z) + epsilon;
+    Matrix4f xform = invXForm.inverse();
+    
+    vector<Vector4f> verts;
+
+    verts.push_back(xform * Vector4f(vertices[A](X), vertices[A](Y), vertices[A](Z), 1));  
+    verts.push_back(xform * Vector4f(vertices[B](X), vertices[B](Y), vertices[B](Z), 1));  
+    verts.push_back(xform * Vector4f(vertices[C](X), vertices[C](Y), vertices[C](Z), 1)); 
+
+    calcMinMax(verts, &minx, &miny, &minz, &maxx, &maxy, &maxz);
+
+    minx -= epsilon;
+    miny -= epsilon;
+    minz -= epsilon;
+    maxx += epsilon;
+    maxy += epsilon;
+    maxz += epsilon;
    
     *min = Vector3f(minx, miny, minz);
     *max = Vector3f(maxx, maxy, maxz);
+}
+
+void Triangle::calcMinMax(vector<Vector4f> verts, float *minx, float *miny, float *minz, float *maxx, float *maxy, float *maxz)
+{
+    if (verts.size() > 0) {
+        
+        float _minx, _miny, _minz, _maxx, _maxy, _maxz;
+  
+        _minx = _maxx = verts[0](X);
+        _miny = _maxy = verts[0](Y);
+        _minz = _maxz = verts[0](Z);
+        
+        for (unsigned int i = 1; i < verts.size(); i++) {
+            _minx = verts[i](X) < _minx ? verts[i](X) : _minx;
+            _miny = verts[i](Y) < _miny ? verts[i](Y) : _miny;
+            _minz = verts[i](Z) < _minz ? verts[i](Z) : _minz;
+            _maxx = verts[i](X) > _maxx ? verts[i](X) : _maxx;
+            _maxy = verts[i](Y) > _maxy ? verts[i](Y) : _maxy;
+            _maxz = verts[i](Z) > _maxz ? verts[i](Z) : _maxz;
+        }  
+  
+        *minx = _minx;
+        *miny = _miny;
+        *minz = _minz;
+        *maxx = _maxx;
+        *maxy = _maxy;
+        *maxz = _maxz;
+    }
 }
 
 float Triangle::getMinBound(int axis)

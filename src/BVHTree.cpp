@@ -43,12 +43,25 @@ bool BVHTree::intersectHelp(shared_ptr<Object> avoid, const Vector3f& pos, const
         // Check if leaf
         if (node->left == NULL && node->right == NULL) {
             
-            float t = node->bb->getObject()->intersection(pos, ray);
+            shared_ptr<Object> object = node->bb->getObject(); 
             
-            if (t >= 0 && node->bb->getObject() != avoid) {
-                *hitRecord = HitRecord(t, node->bb->getObject());
-                return HIT;
-            } 
+            if (object != avoid) { // Make sure its not object to avoid
+                
+                Vector4f pXForm = Vector4f(pos(0), pos(1), pos(2), 1);
+                Vector4f dXForm = Vector4f(ray(0), ray(1), ray(2), 0);
+                
+                Matrix4f inv = object->getInvXForm();
+                
+                Vector4f modelpos = inv * pXForm;
+                Vector4f modelray = inv * dXForm;
+                
+                float t = object->intersection(modelpos.head(3), modelray.head(3));
+                
+                if (t >= 0) {
+                    *hitRecord = HitRecord(t, object);
+                    return HIT;
+                } 
+            }
               
             return !HIT;
 

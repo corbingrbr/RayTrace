@@ -73,7 +73,54 @@ int Sphere::getID()
 
 void Sphere::calcBounds(Vector3f *min, Vector3f *max)
 {
-    *min = Vector3f(position(0) - radius, position(1) - radius, position(2) - radius);
+    Vector3f p = position;
+    float r = radius;
+    
+    Matrix4f xform = invXForm.inverse();
+    
+    vector<Vector4f> vertices;
+    vertices.push_back(xform * Vector4f(p(0)+r,p(1)+r, p(2)+r, 1)); // 
+    vertices.push_back(xform * Vector4f(p(0)+r,p(1)+r, p(2)-r, 1)); // Top portion of bounding box
+    vertices.push_back(xform * Vector4f(p(0)-r,p(1)+r, p(2)+r, 1)); //
+    vertices.push_back(xform * Vector4f(p(0)-r,p(1)+r, p(2)-r, 1)); //
 
-    *max = Vector3f(position(0) + radius, position(1) + radius, position(2) + radius);
+    vertices.push_back(xform * Vector4f(p(0)+r,p(1)-r, p(2)+r, 1)); // 
+    vertices.push_back(xform * Vector4f(p(0)+r,p(1)-r, p(2)-r, 1)); // Bottom portion of bounding box
+    vertices.push_back(xform * Vector4f(p(0)-r,p(1)-r, p(2)+r, 1)); //
+    vertices.push_back(xform * Vector4f(p(0)-r,p(1)-r, p(2)-r, 1)); //
+
+    float minx, miny, minz, maxx, maxy, maxz;
+
+    calcMinMax(vertices, &minx, &miny, &minz, &maxx, &maxy, &maxz);
+
+    *min = Vector3f(minx, miny, minz);
+    *max = Vector3f(maxx, maxy, maxz);
+}
+
+void Sphere::calcMinMax(vector<Vector4f> verts, float *minx, float *miny, float *minz, float *maxx, float *maxy, float *maxz)
+{
+    if (verts.size() > 0) {
+        
+        float _minx, _miny, _minz, _maxx, _maxy, _maxz;
+
+        _minx = _maxx = verts[0](X);
+        _miny = _maxy = verts[0](Y);
+        _minz = _maxz = verts[0](Z);
+        
+        for (unsigned int i = 1; i < verts.size(); i++) {
+            _minx = verts[i](X) < _minx ? verts[i](X) : _minx;
+            _miny = verts[i](Y) < _miny ? verts[i](Y) : _miny;
+            _minz = verts[i](Z) < _minz ? verts[i](Z) : _minz;
+            _maxx = verts[i](X) > _maxx ? verts[i](X) : _maxx;
+            _maxy = verts[i](Y) > _maxy ? verts[i](Y) : _maxy;
+            _maxz = verts[i](Z) > _maxz ? verts[i](Z) : _maxz;
+        }
+        
+        *minx = _minx;
+        *miny = _miny;
+        *minz = _minz;
+        *maxx = _maxx;
+        *maxy = _maxy;
+        *maxz = _maxz;
+    }
 }

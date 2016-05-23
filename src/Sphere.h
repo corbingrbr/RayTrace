@@ -20,7 +20,7 @@ public:
     void print();
     int getID();
     void calcBounds(Eigen::Vector3f *min, Eigen::Vector3f *max);
-    
+    void calcMinMax(std::vector<Eigen::Vector4f> verts, float *minx, float *miny, float *minz, float *maxx, float *maxy, float *maxz);
 
 private:
 

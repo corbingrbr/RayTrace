@@ -44,6 +44,8 @@ Object(std::shared_ptr<Pigment> pigment, std::shared_ptr<Finish> finish, Eigen::
 
 protected:
 
+    enum Axis { X, Y, Z };
+
     Eigen::Vector3f position;
     Eigen::Matrix4f invXForm;
     std::shared_ptr<Pigment> pigment;

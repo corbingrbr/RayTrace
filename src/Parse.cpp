@@ -289,23 +289,23 @@ Matrix4f Parse::rotate(Vector3f r)
     if (r(0) > 0) { // X - Axis
 
         E(1,1) = cos(r(0)*deg2rad);
-        E(2,1) = -sin(r(0)*deg2rad);
-        E(1,2) = sin(r(0)*deg2rad);
+        E(2,1) = sin(r(0)*deg2rad);
+        E(1,2) = -sin(r(0)*deg2rad);
         E(2,2) = cos(r(0)*deg2rad);
         
     } else if (r(1) > 0) { // Y - Axis
         
         E(0,0) = cos(r(1)*deg2rad);
-        E(2,0) = sin(r(1)*deg2rad);
-        E(0,2) = -sin(r(1)*deg2rad);
+        E(2,0) = -sin(r(1)*deg2rad);
+        E(0,2) = sin(r(1)*deg2rad);
         E(2,2) = cos(r(1)*deg2rad);
 
         
     } else { // Z - Axis
         
         E(0,0) = cos(r(2)*deg2rad);
-        E(1,0) = -sin(r(2)*deg2rad);
-        E(0,1) = sin(r(2)*deg2rad);
+        E(1,0) = sin(r(2)*deg2rad);
+        E(0,1) = -sin(r(2)*deg2rad);
         E(1,1) = cos(r(2)*deg2rad);
 
     }
