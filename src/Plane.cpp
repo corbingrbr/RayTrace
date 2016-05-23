@@ -54,3 +54,7 @@ int Plane::getID()
     return Object::PLANE;
 }
     
+void Plane::calcBounds(Vector3f *min, Vector3f *max)
+{
+    // Planes never need their bounds calculated
+}

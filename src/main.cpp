@@ -77,12 +77,15 @@ int main(int argc, char **argv)
     if (JITTER) { srand(time(NULL)); } // Seed random number generator
 
     if (success) {
-    
+        
         if (PRINT_SCENE) { scene->printObjects(); }
+
+        scene->init(); // Construct BVHTree
 
         if (TESTING) {
             unitTests();
         } else {
+
             rayTrace();
             writeImage("../images/" + string(argv[3]));
         }

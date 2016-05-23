@@ -65,7 +65,7 @@ bool Parse::parse(char *file, int aa_res, bool jitter)
             scene->addObject(parseSphere()); 
         }
         else if (token == "plane") { 
-            scene->addObject(parsePlane()); 
+            scene->addPlane(parsePlane()); 
         }
         else if (token == "triangle") { 
             scene->addObject(parseTriangle()); 
@@ -151,8 +151,6 @@ shared_ptr<Light> Parse::parseLight()
 
 shared_ptr<Sphere> Parse::parseSphere()
 {
-    getToken(); // {
-
     Vector3f position = parseVector3f();
     
     getToken();

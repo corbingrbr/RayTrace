@@ -70,3 +70,10 @@ int Sphere::getID()
 {
     return Object::SPHERE;
 }
+
+void Sphere::calcBounds(Vector3f *min, Vector3f *max)
+{
+    *min = Vector3f(position(0) - radius, position(1) - radius, position(2) - radius);
+
+    *max = Vector3f(position(0) + radius, position(1) + radius, position(2) + radius);
+}

@@ -20,9 +20,12 @@ public:
     void init();
     void print();
     int getID();
-    
-private:
+    void calcBounds(Eigen::Vector3f *min, Eigen::Vector3f *max);
 
+private:
+    
+    float getMinBound(int axis);
+    float getMaxBound(int axis);
     void calcNormalNPosition();
 
     enum Vertices { A, B, C };

@@ -20,6 +20,11 @@ public:
     bool intersection(const Eigen::Vector3f& pos, const Eigen::Vector3f& ray);
        
 private:
+    
+    enum Axis { X, Y, Z };
+
+    void swap(float *a, float *b);
+
     Eigen::Vector3f min;
     Eigen::Vector3f max;
     Eigen::Vector3f center;

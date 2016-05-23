@@ -7,6 +7,7 @@
 #include <vector>
 #include <memory>
 #include <algorithm>
+#include <iostream>
 
 #define HIT true
 
@@ -24,11 +25,9 @@ BVHTree::~BVHTree()
 
 void BVHTree::build(vector<shared_ptr<Object> > objects)
 {
-    // Wrap objects up into bounding boxes
-    boxUp(objects);
-    
-    // Generate tree
-    constructTree();     
+    boxUp(objects); // Wrap objects up into bounding boxes
+
+    constructTree(); // Generate tree  
 }
 
 bool BVHTree::intersection(shared_ptr<Object> avoid, const Vector3f& pos, const Vector3f& ray, HitRecord *hr)
@@ -82,11 +81,11 @@ void BVHTree::destroy()
 {   
 }
 
-void *BVHTree::getSortAlg(int axis) {
+sortAlg BVHTree::getSortAlg(int axis) {
     switch (axis) {
-    case X_AXIS : return (void *)sortAlgX;
-    case Y_AXIS : return (void *)sortAlgY;
-    case Z_AXIS : return (void *)sortAlgZ;
+    case X_AXIS : return sortAlgX;
+    case Y_AXIS : return sortAlgY;
+    case Z_AXIS : return sortAlgZ;
     }
 }
 
@@ -122,22 +121,22 @@ BVHNode *BVHTree::constructHelp(int start, int end, int axis)
 {
     BVHNode *node;
 
-    if (start - end == 0) { 
+    if (end - start == 0) { 
+        
         return NULL; 
    
-    } else if (start - end == 1) {
+    } else if (end - start == 1) {
         
         node = new BVHNode();
         node->left = NULL;
         node->right = NULL;
         node->bb = &(boxes[start]);
-    
+
     } else {
-    
         // Sort boxes by provided axis
-        //sort(boxes.begin() + start, boxes.begin() + end, getSortAlg(axis));
-        sort(boxes.begin() + start, boxes.begin() + end, sortAlgX);        
-        int middle = (start - end) / 2;
+        sort(boxes.begin() + start, boxes.begin() + end, getSortAlg(axis));
+
+        int middle = (end + start) / 2;
         
         node = new BVHNode();
         

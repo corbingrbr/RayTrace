@@ -19,6 +19,8 @@ public:
     Eigen::Vector3f getNormal(const Eigen::Vector3f& hitPoint);
     void print();
     int getID();
+    void calcBounds(Eigen::Vector3f *min, Eigen::Vector3f *max);
+    
 
 private:
 

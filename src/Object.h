@@ -5,6 +5,7 @@
 #include <memory>
 #include "Pigment.h"
 #include "Finish.h"
+#include <iostream>
 
 class Object {
 
@@ -23,6 +24,7 @@ Object(std::shared_ptr<Pigment> pigment, std::shared_ptr<Finish> finish, Eigen::
     virtual Eigen::Vector3f getNormal(const Eigen::Vector3f& hitPoint) = 0;
     virtual void print() = 0;
     virtual int getID() = 0;
+    virtual void calcBounds(Eigen::Vector3f *min, Eigen::Vector3f *max) = 0;
     std::shared_ptr<Pigment> getPigment() { return pigment; };
     std::shared_ptr<Finish> getFinish() { return finish; }
     Eigen::Vector3f getPosition() { return position; }
@@ -39,7 +41,6 @@ Object(std::shared_ptr<Pigment> pigment, std::shared_ptr<Finish> finish, Eigen::
     bool isReflective() { return finish->getReflection() > 0.0f; }
     bool isRefractive() { return finish->getRefraction() > 0.0f; }
     Eigen::Matrix4f getInvXForm() { return invXForm; }
-
 
 protected:
 

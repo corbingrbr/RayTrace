@@ -53,13 +53,15 @@ void Camera::castRays(shared_ptr<Window> window, shared_ptr<Scene> scene)
     Shade shade;
 
     float completed = 0;
-    //float inc = 100.00 / (window->getWidth() * window->getHeight());
+    int tot_hash = 40;
+    int n_hash;
+    float inc = (float)tot_hash / window->getWidth();
 
-    cout << "Casting rays ..." << flush;
+    cout << "Casting rays ... [" << string(tot_hash, '_') << "]" << flush;
 
     for (int i = 0; i < window->getWidth(); i++) {
         for (int j = 0; j < window->getHeight(); j++) {
-            
+        
             Vector3f color = Vector3f(0,0,0);
 
             // Generate ray direction from camera into scene
@@ -74,13 +76,15 @@ void Camera::castRays(shared_ptr<Window> window, shared_ptr<Scene> scene)
             color /= rays.size();
 
             // Set color of pixel
-            window->setPixel(i, j, color); 
-
-            //completed += inc;
+            window->setPixel(i, j, color);
         }
+        completed += inc;
+        n_hash = floor(completed);
+        cout << "\rCasting rays ... " << "[" << 
+            string(n_hash, '#') << string(tot_hash - n_hash, '_') << "]" << flush;
     }
 
-    cout << " Done" << endl;
+    cout << "\rCasting rays ... Done" << string(tot_hash, ' ') << endl;
 }
 
 void Camera::unitTests(shared_ptr<Window> window, shared_ptr<Scene> scene) 
@@ -88,8 +92,7 @@ void Camera::unitTests(shared_ptr<Window> window, shared_ptr<Scene> scene)
     cout << endl << endl;
     cout << "Running unit tests ..." << endl << endl;
 
-    unitTest(399, 280, window, scene);
-    //unitTest(240, 280, window, scene);
+    unitTest(196, 168, window, scene);
 }
 
 void Camera::unitTest(int i, int j, shared_ptr<Window> window, shared_ptr<Scene> scene)
@@ -176,16 +179,15 @@ Shade Camera::castRay(shared_ptr<Object> avoid, const Vector3f& loc, const Vecto
 
     // Check whether the ray has intersected an object within the scene
     if (object != NULL && iteration > 0) {
-       
+
         float reflect = object->getReflection();
         float filter = object->getFilter();
 
         // Determine point in space which ray intersects object
         Vector3f hitPoint = loc + t * ray;
 
-
         if (!object->isRefractive()) {
-           
+
             if (!object->isReflective()) {
                
                 color = calcLocal(scene, object, hitPoint);
@@ -199,7 +201,6 @@ Shade Camera::castRay(shared_ptr<Object> avoid, const Vector3f& loc, const Vecto
                                         ray, unitTest, log, &reflectColor)) {
                         reflect = 0;
                     }
-                
                     
                     localColor ^= (1 - reflect);
                     reflectColor *= reflect;

@@ -8,6 +8,8 @@
 
 class HitRecord;
 
+typedef bool (*sortAlg)(BoundingBox, BoundingBox);
+
 struct BVHNode 
 {
     BVHNode *left;
@@ -30,7 +32,7 @@ private:
     enum Axis { X_AXIS, Y_AXIS, Z_AXIS, NUM_AXIS };
     enum Ndx { X, Y, Z };
  
-    void *getSortAlg(int axis);
+    sortAlg getSortAlg(int axis);
 
     static bool sortAlgX(BoundingBox b1, BoundingBox b2);
     static bool sortAlgY(BoundingBox b1, BoundingBox b2);

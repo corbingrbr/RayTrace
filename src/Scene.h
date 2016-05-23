@@ -20,6 +20,7 @@ public:
     
     Scene();
     virtual ~Scene();
+    void init();
     void addObject(std::shared_ptr<Object> object);
     void addPlane(std::shared_ptr<Plane> plane);
     void addLight(std::shared_ptr<Light> light);

@@ -25,6 +25,11 @@ Scene::~Scene()
 {
 }
 
+void Scene::init()
+{
+    bvhTree.build(objects);
+}
+
 void Scene::addObject(shared_ptr<Object> object)
 {
     objects.push_back(object);

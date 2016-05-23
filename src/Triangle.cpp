@@ -6,6 +6,7 @@
 
 #include <Eigen/Dense>
 #include <iostream>
+#include <algorithm>
 
 using namespace std;
 using namespace Eigen;
@@ -108,3 +109,34 @@ void Triangle::calcNormalNPosition()
     position = vertices[A] + 0.5*v1 + 0.5*v2;
 }
 
+// Used for bounding box creation
+void Triangle::calcBounds(Vector3f *min, Vector3f *max)
+{
+    float epsilon = 0.0001; // Accounts for parallel triangle to view 
+    
+    float minx, miny, minz, maxx, maxy, maxz;
+
+    minx = getMinBound(X) - epsilon;
+    miny = getMinBound(Y) - epsilon;
+    minz = getMinBound(Z) - epsilon;
+    maxx = getMaxBound(X) + epsilon;
+    maxy = getMaxBound(Y) + epsilon;
+    maxz = getMaxBound(Z) + epsilon;
+   
+    *min = Vector3f(minx, miny, minz);
+    *max = Vector3f(maxx, maxy, maxz);
+}
+
+float Triangle::getMinBound(int axis)
+{
+    float _min = min(vertices[A](axis), vertices[B](axis));
+    
+    return min(_min, vertices[C](axis));
+}
+
+float Triangle::getMaxBound(int axis)
+{
+    float _max = max(vertices[A](axis), vertices[B](axis));
+    
+    return max(_max, vertices[C](axis));
+}
