@@ -62,8 +62,9 @@ void Scene::printObjects()
     cout << endl;
 
     for (unsigned int i = 0; i < objects.size(); i++) {
-        objects[i]->print();
-        cout << endl;
+
+            objects[i]->print();
+            cout << endl;
     }
 }
 

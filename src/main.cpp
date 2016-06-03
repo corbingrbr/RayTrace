@@ -15,6 +15,10 @@
 #include "Shade.h"
 #include "Tools.h"
 
+#include "Box.h"
+#include "Finish.h"
+#include "Pigment.h"
+
 using namespace std;
 using namespace Eigen;
 
@@ -51,6 +55,16 @@ void writeImage(string povfile)
     window->genImage(image);
 }
 
+void test()
+{
+    Vector3f min = Vector3f(-1, -1, -1);
+    Vector3f max = Vector3f(1,1,1);
+    Vector3f eye = Vector3f(0, 0, 12);
+    Vector3f dir = Vector3f(0, 0, -1);
+    Box b = Box(min, max, make_shared<Pigment>(), make_shared<Finish>(), Matrix4f());
+    b.intersection(eye, dir);
+}
+
 int main(int argc, char **argv)
 {
     if (argc < 5 || argc >= 6) { 
@@ -66,13 +80,7 @@ int main(int argc, char **argv)
     window = make_shared<Window>(width, height);
     scene = make_shared<Scene>();
     
-    bool success;
-
-    if (aa == 1) {
-        success = Parse::parse(file, 3, JITTER);
-    } else {
-        success = Parse::parse(file, 1, !JITTER);
-    }
+    bool success = (aa == 1) ? Parse::parse(file, 3, JITTER) : Parse::parse(file, 1, !JITTER);
 
     if (JITTER) { srand(time(NULL)); } // Seed random number generator
 
@@ -83,7 +91,9 @@ int main(int argc, char **argv)
         scene->init(); // Construct BVHTree
 
         if (TESTING) {
+
             unitTests();
+
         } else {
 
             rayTrace();
@@ -91,7 +101,7 @@ int main(int argc, char **argv)
         }
         
     }
-
+    
     cout << endl;
 
     return 0;

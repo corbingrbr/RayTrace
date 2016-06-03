@@ -76,7 +76,9 @@ float Triangle::intersection(const Vector3f& p0, const Vector3f& ray)
 
 Vector3f Triangle::getNormal(const Vector3f& hitPoint)
 {
-    return normal;
+    Vector4f n = invXForm.transpose() * Vector4f(normal(X), normal(Y), normal(Z), 0);
+    
+    return n.head(3);
 }
 
 void Triangle::init()

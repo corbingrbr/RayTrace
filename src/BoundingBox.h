@@ -9,6 +9,7 @@
 class BoundingBox {
     
 public:
+
     BoundingBox(std::shared_ptr<Object> object);
     BoundingBox(Eigen::Vector3f min, Eigen::Vector3f max);
     virtual ~BoundingBox();

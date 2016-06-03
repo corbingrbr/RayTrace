@@ -27,7 +27,7 @@ public:
 
 private:
     
-    enum Type { PRIMARY, REFLECT, REFRACT };
+    enum Type { PRIMARY, REFLECT, REFRACT, GLOBAL_ILLUM };
 
     void unitTest(int i, int j, std::shared_ptr<Window> window, std::shared_ptr<Scene> scene);
     Eigen::Vector3f calcRay(float dx, float dy, std::shared_ptr<Window> window);
@@ -39,6 +39,7 @@ private:
     bool calcReflection(std::shared_ptr<Scene> scene, std::shared_ptr<Object> object, int iteration, const Eigen::Vector3f& hitPoint, const Eigen::Vector3f& ray, bool unitTest, std::shared_ptr<std::stack<PrintOut> > log, Shade *color);
     Shade calcRefraction(std::shared_ptr<Scene> scene, std::shared_ptr<Object> object, int iteration, const Eigen::Vector3f& hitPoint, const Eigen::Vector3f& ray, bool unitTest, std::shared_ptr<std::stack<PrintOut> > log);  
     Eigen::Vector3f calcRefractionRay(float n1, float n2, const Eigen::Vector3f& ray, const Eigen::Vector3f& normal);
+    Shade calcMonteCarlo(std::shared_ptr<Scene> scene, std::shared_ptr<Object> object, const Eigen::Vector3f& normal, const Eigen::Vector3f& hitPoint, int gillumiter);
     
     Eigen::Vector3f calcAmbient(std::shared_ptr<Object> object);
     Eigen::Vector3f calcDiffuse(std::shared_ptr<Object> object, const Eigen::Vector3f& normal, const Eigen::Vector3f& feeler, std::shared_ptr<Light> light);

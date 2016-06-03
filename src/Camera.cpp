@@ -26,6 +26,7 @@ using namespace std;
 #define UNIT_TEST true
 #define HIT true
 #define REFL_RECURSES 5
+#define IND_LIGHT_BOUNCES 2
 #define AIR 1.0
 #define EPSILON .00001
 
@@ -92,7 +93,9 @@ void Camera::unitTests(shared_ptr<Window> window, shared_ptr<Scene> scene)
     cout << endl << endl;
     cout << "Running unit tests ..." << endl << endl;
 
-    unitTest(196, 168, window, scene);
+    //unitTest(399, 280, window, scene);
+    //unitTest(240, 280, window, scene);
+    unitTest(417, 303, window, scene);
 }
 
 void Camera::unitTest(int i, int j, shared_ptr<Window> window, shared_ptr<Scene> scene)
@@ -208,10 +211,13 @@ Shade Camera::castRay(shared_ptr<Object> avoid, const Vector3f& loc, const Vecto
             }
         
         } else {  
+
             color = calcRefraction(scene, object, iteration, hitPoint, ray, unitTest, log);
+
         }
      
     } else { 
+
         color = Shade();   
     }
 
@@ -261,8 +267,7 @@ Shade Camera::calcLocal(shared_ptr<Scene> scene, shared_ptr<Object> object, cons
             // Light vector
             Vector3f hit2Light = lights[i]->getPosition() - hitPoint;
             Vector3f feeler = hit2Light.normalized();
-            Vector3f n = object->getNormal(hitPoint);
-            Vector3f normal = (object->getInvXForm() * Vector4f(n(0), n(1), n(2), 0)).head(3);
+            Vector3f normal = object->getNormal(hitPoint);
             
             diffuse += calcDiffuse(object, normal, feeler, lights[i]);
             specular += calcSpecular(object, hitPoint, normal, feeler, lights[i]);
@@ -314,25 +319,22 @@ Shade Camera::calcRefraction(shared_ptr<Scene> scene, shared_ptr<Object> object,
         c = -ray.dot(normal);
         
     } else {
-       
-        /*kr = exp(-art);
-        kg = exp(-agt);
-        kb = exp(-abt);*/
         
         refractRay = calcRefractionRay(n1, n2, ray, -normal); 
         
-        if (refractRay(0) > 0 || refractRay(1) > 0 || refractRay(2) > 0) {
-            c = refractRay.dot(normal);
-        } else {       
+        // Internal Reflection
+        if (refractRay(0) == 0 && refractRay(1) == 0 && refractRay(2) == 0) { 
             return reflectColor;
-        }      
+        }    
+
+        c = ray.dot(normal);
     }
     
     Vector3f newLoc = hitPoint + refractRay * EPSILON;
 
     refractColor = castRay(NULL, newLoc, refractRay, scene, unitTest, iteration-1, log, REFRACT);
    
-    float R0 = pow(ior - 1, 2) / pow(ior + 1, 2);
+    float R0 = pow((n1 - n2) / (n1 + n2), 2);
     float R = R0 + (1 - R0) * pow(1-c, 5);
 
     refractColor *= (1 - R);
@@ -340,8 +342,7 @@ Shade Camera::calcRefraction(shared_ptr<Scene> scene, shared_ptr<Object> object,
     
     Shade color = refractColor + reflectColor;
     color.clamp();
-
-    
+ 
     return color;
 }
 
@@ -352,10 +353,13 @@ HitRecord Camera::intersectRay(shared_ptr<Object> avoid, const Vector3f& loc, co
 
 Vector3f Camera::calcRefractionRay(float n1, float n2, const Vector3f& ray, const Vector3f& normal)
 {
-    float radicand = sqrt(1 - pow(n1 / n2, 2) * (1 - pow(ray.dot(normal), 2)));
+    float iorDiv = n1 / n2;
+    float c = -ray.dot(normal); // Possible error here
+    float radicand = 1 - iorDiv*iorDiv * (1 - c*c);
+  
+    if (radicand < 0) { return Vector3f(0, 0, 0); } // Internal reflection
     
-    // Returns Vector3f(0,0,0) if total internal reflection
-    return radicand < 0 ? Vector3f(0,0,0) : (n1 / n2) * (ray - normal * ray.dot(normal)) - normal * radicand; 
+    return (iorDiv*ray) + (iorDiv*c - sqrt(radicand))*normal;
 }
 
 Vector3f Camera::calcAmbient(shared_ptr<Object> object)
@@ -379,3 +383,123 @@ Vector3f Camera::calcSpecular(shared_ptr<Object> object, const Vector3f& hitPoin
     return Tools::mult2Vecs(object->getRGB() * object->getSpecular() * pow(normal.dot(half), 1 / object->getRoughness()), light->getColor());
 }
 
+Shade Camera::calcMonteCarlo(shared_ptr<Scene> scene, shared_ptr<Object> object, const Vector3f& normal, const Vector3f& hitPoint, int gillumiter)
+{
+    int numRays;
+    
+    if (gillumiter == IND_LIGHT_BOUNCES) {
+        numRays = 128;
+    } else if (gillumiter == IND_LIGHT_BOUNCES - 1) {
+        numRays = 32;
+    } else {
+        return Shade(calcAmbient(object), Vector3f(0,0,0), Vector3f(0,0,0));
+    }
+    
+    // Calc transform matrix
+    float angle = acos(normal.dot(Vector3f(0, 0, 1)));
+    Vector3f axis = normal.cross(Vector3f(0,0,1));
+    Matrix3f R;
+    R = AngleAxisf(angle, axis);
+    
+    float u1, u2;
+
+    Shade finalShade = Shade();
+    
+    for (int i = 0; i < numRays; i++) {
+        
+        u1 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+        u2 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+        float r = sqrt(1.0f - u1 * u1);
+        float phi = 2 * M_PI * u2;
+
+        Vector3f genRay = Vector3f(cos(phi) * r, sin(phi) * r, u1);
+        
+        genRay = R * genRay;
+        Shade s = castRay(object, hitPoint, genRay, scene, !UNIT_TEST, REFL_RECURSES, NULL, GLOBAL_ILLUM);
+        
+        finalShade = finalShade + s;
+    }
+    
+    finalShade /= numRays;
+    
+    return finalShade;
+}
+
+// http://graphicrants.blogspot.com/2013/08/specular-brdf-reference.html
+/*Eigen::Vector3f CookTorrance(const Shape *hitShape, const Eigen::Vector3f &n, const Eigen::Vector3f &l, 
+                                        const Eigen::Vector3f &d, const Eigen::Vector3f &lightCol, 
+                                        double curIOR, double newIOR) {
+    Eigen::Vector3f v = -d;
+    Eigen::Vector3f h = (l + v).normalized();
+    float m = hitShape->finish.roughness;
+    v.normalize();
+
+    float NdotV= n.dot(v);
+    float NdotH= n.dot(h);
+    float NdotL= n.dot(l);
+    float VdotH= v.dot(h);
+
+    // Calculate Cook-Torrance (G)
+    double G1 = (2.0*NdotH*NdotV)/VdotH;
+    double G2 = (2.0*NdotH*NdotL)/VdotH;
+    float Geom = fmin(1.0, fmin(G2, G1));
+
+    // Calculate GGX (Trowbridge-Reitz) Distribution (D)
+    double alpha = m*m;
+    double alphaSqr = alpha*alpha;
+    double denom = PI*pow(((NdotH*NdotH)*(alphaSqr - 1) + 1), 2);
+    float Rough= alphaSqr/denom;
+
+    // Calculate F
+    double r1 = curIOR; // index of refraction for the medium one (like Air,  which is 1)
+    double r2 = newIOR; // index of refraction for the medium two (like lead, which is 2)
+    float R0 = pow(((r1 - r2)/(r1 + r2)), 2);
+    float Fresnel= R0 + (1.0 - R0)*pow(1.0 - VdotH, 5.0);   //schlick's approximation
+
+    double ct = (Rough*Fresnel*Geom)/(4.0*NdotV*NdotL);
+    double spec = (hitShape->finish.specular)*ct;
+
+    // calculate diffuse
+    double dif = hitShape->finish.diffuse*max(0.0f, NdotL);
+
+    Eigen::Vector3f ret = hitShape->color.head<3>()*(dif + spec);
+    ret[0] *= lightCol[0];
+    ret[1] *= lightCol[1];
+    ret[2] *= lightCol[2];
+
+    return ret;
+}
+
+/*Eigen::Vector3f ToonSorta(const Shape *hitShape, const Eigen::Vector3f &n, const Eigen::Vector3f &l, 
+                                const Eigen::Vector3f &d, const Eigen::Vector3f &lightCol, 
+                                Eigen::Vector3f *retColor) {
+    Eigen::Vector3f baseColor = hitShape->color.head<3>();
+
+    if (-.1 < d.dot(n)) {
+        // we are at an edge and should color it black for outlining
+        *retColor = Eigen::Vector3f(0,0,0);
+        return Eigen::Vector3f(0,0,0);
+    }
+
+    // prepare what is need for blinn-phong
+    Eigen::Vector3f h = l + -d;
+    h.normalize();
+
+    // make diffuse
+    double ndl = max(0.0f, n.dot(l));
+    Eigen::Vector3f dif = baseColor*hitShape->finish.diffuse*ndl;
+    
+    // make specular
+    double hdn = h.dot(n);
+    double shine = (1.0f/hitShape->finish.roughness);
+    Eigen::Vector3f spec = (baseColor*hitShape->finish.specular)*pow(hdn, shine);
+
+    // add in light color
+    Eigen::Vector3f ret = dif + spec;
+
+    ret[0] *= lightCol[0];
+    ret[1] *= lightCol[1];
+    ret[2] *= lightCol[2];
+
+    return ret;
+    }*/

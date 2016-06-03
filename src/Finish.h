@@ -6,6 +6,8 @@
 class Finish {
     
 public:
+    
+    Finish(){}
 
 Finish(float ambient, float diffuse, float specular, float roughness, float reflection, float refraction, float ior)
     : ambient(ambient),

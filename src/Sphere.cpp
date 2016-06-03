@@ -53,7 +53,13 @@ float Sphere::intersection(const Vector3f& e, const Vector3f& d)
 
 Vector3f Sphere::getNormal(const Vector3f& hitPoint)
 {
-    return (hitPoint - position).normalized();
+    Vector4f hp = invXForm * Vector4f(hitPoint(X), hitPoint(Y), hitPoint(Z), 1);
+    Vector4f normal = hp - Vector4f(position(X), position(Y), position(Z), 1);
+    normal.normalize();
+    normal = invXForm.transpose() * normal;
+    normal.normalize();
+
+    return normal.head(3);
 }
 
 void Sphere::print()

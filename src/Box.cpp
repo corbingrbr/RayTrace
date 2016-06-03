@@ -7,6 +7,7 @@
 #include <iostream>
 #include <algorithm>
 #include <memory>
+#include <limits>
 #include <vector>
 
 #include <Eigen/Dense>
@@ -19,53 +20,84 @@ Box::Box(Vector3f min, Vector3f max, shared_ptr<Pigment> pigment, shared_ptr<Fin
       min(min),
       max(max)
 {
-    center = (min + max) / 2;
+center = (min + max) / 2;
 }
 
 Box::~Box()
 {
 }
-
+    
 float Box::intersection(const Vector3f& e, const Vector3f& d)
 {
-    float tmax, tmin = 0;
+      
+    float tgmin = -numeric_limits<float>::infinity();
+    float tgmax = numeric_limits<float>::infinity();
 
-    for (int i = 0; i < 3; i++) {
- 
-        float invD = 1.0f / d(i);
-        float t0 = (min(i) - e(i)) * invD;
-        float t1 = (max(i) - e(i)) * invD;
-        if (invD < 0.0f) { swap(&t0, &t1); }
-        
-        tmin = t0 > tmin ? t0 : tmin;
-        tmax = t1;
-        if (tmax <= tmin) { return false; }
-    }
-    
-    return true;
+   for (int i = 0; i < 3; i++) {
+      float tmin = (min(i) - e(i)) / d(i);
+      float tmax = (max(i) - e(i)) / d(i);
+
+      if (tmin > tmax) {
+         std::swap(tmin, tmax);
+      }
+
+      tgmin = tmin > tgmin ? tmin : tgmin;
+      tgmax = tmax < tgmax ? tmax : tgmax;
+
+      if (tgmin > tgmax) {
+         return -1.0;
+      }
+   }
+
+   if (tgmin > tgmax) {
+      std::cout << "oops" << std::endl;
+   }
+
+   if (tgmin < 0) {
+      if (tgmax > 0) {
+         return tgmax;
+      }
+      
+      return tgmax;
+   }
+   return tgmin;   
 }
+
 
 Vector3f Box::getNormal(const Vector3f& hitPoint)
 {
-    /*Vector4f hp = invXForm * Vector4f(hitPoint(X), hitPoint(Y), hitPoint(Z), 1);
+    Vector4f hp = invXForm * Vector4f(hitPoint(X), hitPoint(Y), hitPoint(Z), 1);
+    
     float epsilon = .0001;
-
-    if (hp(X) > min(X) - epsilon && hp(X) <= min(X)) { return Vector3f(-1, 0, 0); }
-    if (hp(X) < max(X) + epsilon && hp(X) >= max(X)) { return Vector3f(1, 0, 0); }
+   
+    Vector4f normal;
     
-    if (hp(Y) > min(Y) - epsilon && hp(Y) <= min(Y)) { return Vector3f(0, 1, 0); }
-    if (hp(Y) < max(Y) + epsilon && hp(Y) >= max(Y)) { return Vector3f(0, -1, 0); }
+    if (hp(X) > min(X) - epsilon && hp(X) <= min(X)) { 
+        normal = Vector4f(-1, 0, 0, 0);
+    } else if (hp(X) < max(X) + epsilon && hp(X) >= max(X)) { 
+        normal = Vector4f(1, 0, 0, 0); 
+    } else if (hp(Y) > min(Y) - epsilon && hp(Y) <= min(Y)) { 
+        normal = Vector4f(0, 1, 0, 0); 
+    } else if (hp(Y) < max(Y) + epsilon && hp(Y) >= max(Y)) {
+        normal = Vector4f(0, -1, 0, 0); 
+    } else if (hp(Z) > min(Z) - epsilon && hp(Z) <= min(Z)) { 
+        normal = Vector4f(0, 0, -1, 0);
+    } else { 
+        normal = Vector4f(0, 0, 1, 0); 
+    }
     
-    if (hp(Z) > min(Z) - epsilon && hp(Z) <= min(Z)) { return Vector3f(0, 0, -1); }
-    if (hp(Z) < max(Z) + epsilon && hp(Z) >= max(Z)) { return Vector3f(0, 0, 1); }*/
-    
-    return Vector3f(-1, 0, 0);
+    normal = invXForm.transpose() * normal;
+    normal.normalize();
+   
+    return normal.head(3);
 }
 
 void Box::print()
 {
     cout << "-- Box --" << endl;
     Tools::printVec3("Location", center);
+    Tools::printVec3("Min", min);
+    Tools::printVec3("Max", max);
     Tools::printPigment(pigment);
     Tools::printFinish(finish);
 }
@@ -125,11 +157,4 @@ void Box::calcMinMax(vector<Vector4f> verts, float *minx, float *miny, float *mi
         *maxy = _maxy;
         *maxz = _maxz;
     }
-}
-
-void Box::swap(float *a, float *b) {
-    float temp = *a;
-    
-    *a = *b;
-    *b = temp;
 }

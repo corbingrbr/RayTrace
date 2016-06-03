@@ -7,6 +7,7 @@ class Pigment {
     
 public:
 
+    Pigment(){}
     Pigment(Eigen::Vector3f rgb, float filter)
         : rgb(rgb),
         filter(filter) {}

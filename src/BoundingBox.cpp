@@ -66,7 +66,7 @@ bool BoundingBox::intersection(const Vector3f& pos, const Vector3f& ray)
         if (invD < 0.0f) { swap(&t0, &t1); }
         
         tmin = t0 > tmin ? t0 : tmin;
-        tmax = t1;;
+        tmax = t1;
         if (tmax <= tmin) { return false; }
     }
     

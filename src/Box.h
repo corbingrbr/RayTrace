@@ -24,7 +24,6 @@ public:
 
 private:
     void calcMinMax(std::vector<Eigen::Vector4f> verts, float *minx, float *miny, float *minz, float *maxx, float *maxy, float *maxz);
-    void swap(float *a, float *b);
 
     Eigen::Vector3f min;
     Eigen::Vector3f max;

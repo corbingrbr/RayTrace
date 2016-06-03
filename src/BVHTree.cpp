@@ -2,6 +2,7 @@
 
 #include "BoundingBox.h"
 #include "HitRecord.h"
+#include "Tools.h"
 
 #include <Eigen/Dense>
 #include <vector>
@@ -45,18 +46,15 @@ bool BVHTree::intersectHelp(shared_ptr<Object> avoid, const Vector3f& pos, const
 
             shared_ptr<Object> object = node->bb->getObject(); 
             
-            if (object != avoid) { // Make sure its not object to avoid
-                
-                Vector4f pXForm = Vector4f(pos(0), pos(1), pos(2), 1);
-                Vector4f dXForm = Vector4f(ray(0), ray(1), ray(2), 0);
+            if (object != avoid) {
                 
                 Matrix4f inv = object->getInvXForm();
                 
-                Vector4f modelpos = inv * pXForm;
-                Vector4f modelray = inv * dXForm;
+                Vector4f modelPos = inv * Vector4f(pos(0), pos(1), pos(2), 1);
+                Vector4f modelRay = inv * Vector4f(ray(0), ray(1), ray(2), 0);
                 
-                float t = object->intersection(modelpos.head(3), modelray.head(3));
-                
+                float t = object->intersection(modelPos.head(3), modelRay.head(3));
+
                 if (t >= 0) {
                     *hitRecord = HitRecord(t, object);
                     return HIT;
@@ -153,8 +151,8 @@ BVHNode *BVHTree::constructHelp(int start, int end, int axis)
         
         node = new BVHNode();
         
-        node->left = constructHelp(start, middle, (axis + 1) / NUM_AXIS);
-        node->right = constructHelp(middle, end, (axis + 1) / NUM_AXIS);
+        node->left = constructHelp(start, middle, (axis + 1) % NUM_AXIS);
+        node->right = constructHelp(middle, end, (axis + 1) % NUM_AXIS);
         node->bb = combine(node->left->bb, node->right->bb);
     }
 
@@ -163,6 +161,7 @@ BVHNode *BVHTree::constructHelp(int start, int end, int axis)
 
 BoundingBox *BVHTree::combine(BoundingBox *left, BoundingBox *right)
 {
+    // Get Bounds of each bounding box
     Vector3f lmin = left->getMin();
     Vector3f lmax = left->getMax();
     Vector3f rmin = right->getMin();

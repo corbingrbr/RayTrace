@@ -291,7 +291,7 @@ shared_ptr<Box> Parse::parseBox()
         if (token == "scale") {
             xform = scale(parseVector3f()) * xform;
         } else if (token == "rotate") {
-             // Only rotates about one axis at a time
+            // Only rotates about one axis at a time
             xform = rotate(parseVector3f()) * xform;
         } else if (token == "translate"){
             xform = translate(parseVector3f()) * xform;
@@ -307,7 +307,6 @@ shared_ptr<Box> Parse::parseBox()
         getToken();
     }
 
-    
     return make_shared<Box>(min, max, pigment, finish, xform.inverse());
 }
 
@@ -327,15 +326,15 @@ Matrix4f Parse::rotate(Vector3f r)
     float deg2rad = M_PI / 180;
     Matrix4f E = Matrix4f::Identity();
 
-    if (r(0) > 0) { // X - Axis
+    if (r(0) != 0) { // X - Axis
 
         E(1,1) = cos(r(0)*deg2rad);
         E(2,1) = sin(r(0)*deg2rad);
         E(1,2) = -sin(r(0)*deg2rad);
         E(2,2) = cos(r(0)*deg2rad);
         
-    } else if (r(1) > 0) { // Y - Axis
-        
+    } else if (r(1) != 0) { // Y - Axis
+
         E(0,0) = cos(r(1)*deg2rad);
         E(2,0) = -sin(r(1)*deg2rad);
         E(0,2) = sin(r(1)*deg2rad);
