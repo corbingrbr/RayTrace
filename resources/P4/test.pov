@@ -64,11 +64,11 @@ sphere {<0, 1.74305, 0>, 2
 
 
 // and a few assorted objects
-/sphere {<0, 0, 0>, 2
-/  pigment {color rgbf <1.0, 1.0, 1.0, 0.8>}
-/  finish {ambient 0.2 diffuse 0.8 refraction 1.0 ior 1.333}
-/  translate <5.5, -3, -1>
-/}
+sphere {<0, 0, 0>, 2
+  pigment {color rgbf <1.0, 1.0, 1.0, 0.8>}
+  finish {ambient 0.2 diffuse 0.8 refraction 1.0 ior 1.333}
+  translate <5.5, -3, -1>
+}
 
 box {<-2, -5, -5>, <2, 5, 5>
   pigment {color rgbf <1.0, 0.2, 1.0, 0.6>}

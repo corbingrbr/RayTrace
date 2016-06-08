@@ -33,7 +33,7 @@ using namespace std;
 #define SECOND_GILL 10
 #define THICKNESS .1
 
-Camera::Camera(Vector3f _location, Vector3f _up, Vector3f _right, Vector3f _lookAt, int AA_res, bool jitter, bool gi, bool cartoon) :
+Camera::Camera(Vector3f _location, Vector3f _up, Vector3f _right, Vector3f _lookAt, int AA_res, bool jitter, bool gi, bool cartoon, bool isBlinnPhong) :
     location(_location),
     up(_up),
     right(_right),
@@ -41,7 +41,8 @@ Camera::Camera(Vector3f _location, Vector3f _up, Vector3f _right, Vector3f _look
     AA_res(AA_res),
     jitter(jitter),
     gi(gi),
-    cartoon(cartoon)
+    cartoon(cartoon),
+    isBlinnPhong(isBlinnPhong)
 {
     rght = right.norm() / 2;
     left = -rght;
@@ -196,7 +197,7 @@ Shade Camera::castRay(shared_ptr<Object> avoid, const Vector3f& loc, const Vecto
         Vector3f normal = object->getNormal(hitPoint);
 
         // Cartoon shading
-        if (cartoon) {
+        /*if (cartoon) {
             float d = normal.dot(-ray);
             int id = object->getID();
 
@@ -214,17 +215,17 @@ Shade Camera::castRay(shared_ptr<Object> avoid, const Vector3f& loc, const Vecto
                 //return Shade(Vector3f(1.0,1.0,1.0), Vector3f(1.0,1.0,1.0), Vector3f(1.0,1.0,1.0));
 
             }
-        }
+            }*/
       
         if (!object->isRefractive()) {
 
             if (!object->isReflective()) {
                
-                color = calcLocal(scene, object, hitPoint, gillumiter);
+                color = calcLocal(scene, object, ray, hitPoint, gillumiter);
                 
             } else {
 
-                Shade localColor = calcLocal(scene, object, hitPoint, gillumiter);
+                Shade localColor = calcLocal(scene, object, ray, hitPoint, gillumiter);
                 Shade reflectColor;
                     
                 if (!calcReflection(scene, object, iteration, hitPoint,
@@ -278,7 +279,7 @@ bool Camera::isShadowed(shared_ptr<Scene> scene, shared_ptr<Light> light, shared
     return hitRecord.getObject() != NULL && (hitRecord.getT() * feeler).norm() < hit2Light.norm();
 }
 
-Shade Camera::calcLocal(shared_ptr<Scene> scene, shared_ptr<Object> object, const Vector3f& hitPoint, int gillumiter)
+Shade Camera::calcLocal(shared_ptr<Scene> scene, shared_ptr<Object> object, const Vector3f& ray, const Vector3f& hitPoint, int gillumiter)
 {   
     Vector3f ambient = Vector3f(0,0,0);
     Vector3f diffuse = Vector3f(0,0,0);
@@ -288,7 +289,7 @@ Shade Camera::calcLocal(shared_ptr<Scene> scene, shared_ptr<Object> object, cons
 
     // Iterate through lights in scene
     vector<shared_ptr<Light> > lights = scene->getLights();
-
+    
     for (int i = 0; i < lights.size(); i++) {
         
         if (!isShadowed(scene, lights[i], object, hitPoint)) {
@@ -298,51 +299,26 @@ Shade Camera::calcLocal(shared_ptr<Scene> scene, shared_ptr<Object> object, cons
             Vector3f feeler = hit2Light.normalized();
             
             diffuse += calcDiffuse(object, normal, feeler, lights[i]);
-            
-            //if (isBlinnPhong) {
+
+            if (isBlinnPhong) {
                 specular += calcSpecular(object, hitPoint, normal, feeler, lights[i]);
-                /*} else {
-                float NdotV = normal.dot(-ray);
-                float NdotHNoClamp = N.dot(H);
-                float tmp1 = 2 * (NdotHNoClamp)*(NdotV) / (V.dot(H));
-                float tmp2 = 2 * (NdotHNoClamp)* (NdotL) / (V.dot(H));
-                float G = std::min(1.0f, std::min(tmp1, tmp2));
-
-                float F0 = ((1.0 - obj->getFinish().ior) / (1.0 + obj->getFinish().ior))
-                    * ((1.0 - obj->getFinish().ior) / (1.0 + obj->getFinish().ior));
-                float theta = acos(NdotV);
-                float F = F0 + (1 - F0) * std::pow(cos(theta), 5);
-
-                float a = acos(NdotHNoClamp);
-                float tan2a = tan(a) * tan(a);
-                float cos4a = cos(a) * cos(a) * cos(a) * cos(a);
-                float m = obj->getFinish().roughness;
-                float D = std::exp(-tan2a / (m*m)) / (M_PI * m*m*cos4a);
-
-                float kspec = D*F*G / (4 * NdotV * (N.dot(L)));
-
-                R += Lc(0) * kspec * Ks(0);
-                G += Lc(1) * kspec * Ks(1);
-                B += Lc(2) * kspec * Ks(2);
-                }*/
+            } else {
+                specular += cookTorrance(object, lights[i], ray, normal);
+            }
         } 
     }
+
     
     if (gi) {
         ambient = calcMonteCarlo(scene, object, normal, hitPoint, gillumiter);
     } else {
         ambient = calcAmbient(object);
     }
-
-    // Local Color
+    
     Shade s = Shade(ambient, diffuse, specular);
     s.clamp();
 
     return s; 
-}
-
-Shade blinnPhong()
-{
 }
 
 bool Camera::calcReflection(shared_ptr<Scene> scene, shared_ptr<Object> object, int iteration, const Vector3f& hitPoint, const Vector3f& ray, bool unitTest, shared_ptr<stack<PrintOut> > log, Shade *color, int gillumiter)
@@ -445,6 +421,46 @@ Vector3f Camera::calcSpecular(shared_ptr<Object> object, const Vector3f& hitPoin
     return Tools::mult2Vecs(object->getRGB() * object->getSpecular() * pow(normal.dot(half), 1 / object->getRoughness()), light->getColor());
 }
 
+Vector3f Camera::cookTorrance(shared_ptr<Object> object, shared_ptr<Light> light, const Vector3f& ray, const Vector3f& N)
+{
+    Vector3f V = -ray;
+    Vector3f L = light->getPosition();
+   
+    float NdotV = N.dot(V);
+    float NdotL = N.dot(L);
+
+    Vector3f H = L + V;
+    H.normalize();
+
+    float NdotHNoClamp = N.dot(H);
+    float tmp1 = 2 * (NdotHNoClamp)*(NdotV) / (V.dot(H));
+    float tmp2 = 2 * (NdotHNoClamp)* (NdotL) / (V.dot(H));
+    float G = std::min(1.0f, std::min(tmp1, tmp2));
+    
+    float F0 = ((1.0 - object->getIOR()) / (1.0 + object->getIOR()))
+        * ((1.0 - object->getIOR()) / (1.0 + object->getIOR()));
+    float theta = acos(NdotV);
+    float F = F0 + (1 - F0) * std::pow(cos(theta), 5);
+    
+    float a = acos(NdotHNoClamp);
+    float tan2a = tan(a) * tan(a);
+    float cos4a = cos(a) * cos(a) * cos(a) * cos(a);
+    float m = object->getRoughness();
+    if (m <= 0.0f) { m = 0.01; }
+    float D = std::exp(-tan2a / (m*m)) / (M_PI * m*m*cos4a);
+    
+    float kspec = D*F*G / (4 * NdotV * (N.dot(L)));
+
+    Vector3f objCol = object->getRGB();    
+    Vector3f color = light->getColor() * kspec * object->getSpecular();
+
+    color(0) *= objCol(0);
+    color(1) *= objCol(1);
+    color(2) *= objCol(2);
+    
+    return color;
+}
+
 Vector3f Camera::calcMonteCarlo(shared_ptr<Scene> scene, shared_ptr<Object> object, const Vector3f& normal, const Vector3f& hitPoint, int gillumiter)
 {
     int numRays;
@@ -497,58 +513,3 @@ Vector3f Camera::calcMonteCarlo(shared_ptr<Scene> scene, shared_ptr<Object> obje
     return ambient;
 }
 
-// http://graphicrants.blogspot.com/2013/08/specular-brdf-reference.html
-Eigen::Vector3f cookTorrance(shared_ptr<Object> object, const Vector3f& hitPoint, 
-                             const Vector3f& ray, shared_ptr<Light> light) {
-    
-    Vector3f l = light->getPosition();
-    Vector3f v = -ray;
-    Vector3f h = (l + v).normalized();
-    float m = object->getRoughness();
-    v.normalize();
-
-    float ior = object->getIOR();
-
-    Vector3f normal = object->getNormal(hitPoint);
-
-    // Check whether ray is leaving or entering object
-    bool entering = ray.dot(normal) < 0 ? true : false;
-    
-    // Index of refraction setting
-    float n1 = entering ? AIR : ior;
-    float n2 = entering ? ior : AIR;
-
-    float NdotV= normal.dot(v);
-    float NdotH= normal.dot(h);
-    float NdotL= normal.dot(l);
-    float VdotH= v.dot(h);
-
-    // Calculate Cook-Torrance (G)
-    double G1 = (2.0*NdotH*NdotV)/VdotH;
-    double G2 = (2.0*NdotH*NdotL)/VdotH;
-    float Geom = fmin(1.0, fmin(G2, G1));
-
-    // Calculate GGX (Trowbridge-Reitz) Distribution (D)
-    double alpha = m*m;
-    double alphaSqr = alpha*alpha;
-    double denom = M_PI*pow(((NdotH*NdotH)*(alphaSqr - 1) + 1), 2);
-    float Rough= alphaSqr/denom;
-
-    // Calculate F
-    float R0 = pow(((n1 - n2)/(n1 + n2)), 2);
-    float Fresnel= R0 + (1.0 - R0)*pow(1.0 - VdotH, 5.0);   //schlick's approximation
-
-    double ct = (Rough*Fresnel*Geom)/(4.0*NdotV*NdotL);
-
-    double spec = object->getSpecular()*ct;
-    double dif = object->getDiffuse()*max(0.0f, NdotL);
-
-    Vector3f color = object->getRGB() * (dif + spec);
-    Vector3f lColor = light->getColor();
-
-    color(0) *= lColor(0);
-    color(1) *= lColor(1);
-    color(2) *= lColor(2);
-
-    return color;
-}

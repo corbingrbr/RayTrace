@@ -1,7 +1,7 @@
 camera {
-    location  <7, 0,7> 
-    up        <0,  1,  0>
-    right     <.94, 0,  -.94>
+    location  <7, 0, 7> 
+    up        <0,  1, 0>
+    right     <.94, 0, -.94>
     look_at   <0, 0, 0>
 }
 
@@ -29,5 +29,5 @@ sphere {<2.8, 0, -4>, 2.5
 
 plane {<0, 1, 0>, -4
     pigment {color rgb <0.2, 0.6, 0.8>}
-    finish {ambient 0.4 diffuse 0.8}
+    finish {ambient 0.4 diffuse 0.8 roughness 0.01}
 }

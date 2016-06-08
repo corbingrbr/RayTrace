@@ -66,6 +66,11 @@ void Scene::printObjects()
             objects[i]->print();
             cout << endl;
     }
+
+    for (unsigned int i = 0; i < planes.size(); i++) {
+        planes[i]->print();
+        cout << endl;
+    }
 }
 
 HitRecord Scene::intersections(shared_ptr<Object> avoid, const Vector3f& p0, const Vector3f& d)

@@ -31,7 +31,7 @@ stringstream Parse::ss;
 string Parse::line;
 string Parse::token;
 
-bool Parse::parse(char *file, int aa_res, bool jitter, bool gi, bool cartoon)
+bool Parse::parse(char *file, int aa_res, bool jitter, bool gi, bool cartoon, bool isBlinnPhong)
 {
     // Open file and set up stream
     in.open(file);
@@ -57,7 +57,7 @@ bool Parse::parse(char *file, int aa_res, bool jitter, bool gi, bool cartoon)
         getToken();
 
         if (token == "camera") { 
-            camera = parseCamera(aa_res, jitter, gi, cartoon);
+            camera = parseCamera(aa_res, jitter, gi, cartoon, isBlinnPhong);
         }
         else if (token == "light_source") { 
             scene->addLight(parseLight()); 
@@ -116,7 +116,7 @@ void Parse::skipRest()
     nextLine();
 }
 
-shared_ptr<Camera> Parse::parseCamera(int aa_res, bool jitter, bool gi, bool cartoon)
+shared_ptr<Camera> Parse::parseCamera(int aa_res, bool jitter, bool gi, bool cartoon, bool isBlinnPhong)
 {
     nextLine();
     ss >> token; // Discard first word
@@ -136,7 +136,7 @@ shared_ptr<Camera> Parse::parseCamera(int aa_res, bool jitter, bool gi, bool car
 
     nextLine();
 
-    return make_shared<Camera>(location, up, right, look_at, aa_res, jitter, gi, cartoon);
+    return make_shared<Camera>(location, up, right, look_at, aa_res, jitter, gi, cartoon, isBlinnPhong);
 }
 
 shared_ptr<Light> Parse::parseLight()
@@ -433,7 +433,7 @@ shared_ptr<Finish> Parse::parseFinish()
     float roughness = 0.0;
     float reflection = 0.0;
     float refraction = 0.0;
-    float ior = 0.0;
+    float ior = 1.0;
 
     ss >> s;
     s = s.substr(1, s.length()); // Removal of "{"

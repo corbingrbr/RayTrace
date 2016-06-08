@@ -67,23 +67,26 @@ void test()
 
 int main(int argc, char **argv)
 {
-    if (argc < 7 || argc >= 8) { 
-        cout << "Must supply width, height, input_file, AA, GI, CARTOON" << endl;
+    if (argc < 5 || argc >= 6) { 
+        cout << "Must supply width, height, input_file, BRDF" << endl;
         return 0;
     }
 
     int width = atoi(argv[1]);
     int height = atoi(argv[2]);
     char *file = argv[3];
-    int aa = atoi(argv[4]);
-    bool gi = atoi(argv[5]) == 1 ? true : false;
-    bool cartoon = atoi(argv[6]) == 1 ? true : false;
+    bool isBlinnPhong = atoi(argv[4]) == 0 ? true : false;
+    int aa = atoi(argv[5]) == 1 ? true : false;
+
+    bool gi = false;
+    bool cartoon = false;
+   
     
     window = make_shared<Window>(width, height);
     scene = make_shared<Scene>();
     
-    bool success = (aa == 1) ? Parse::parse(file, 3, JITTER, gi, cartoon) : 
-        Parse::parse(file, 1, !JITTER, gi, cartoon);
+    bool success = aa ? Parse::parse(file, 3, JITTER, gi, cartoon, isBlinnPhong) : 
+        Parse::parse(file, 1, !JITTER, gi, cartoon, isBlinnPhong);
 
     if (JITTER) { srand(time(NULL)); } // Seed random number generator
 
