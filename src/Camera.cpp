@@ -29,14 +29,19 @@ using namespace std;
 #define IND_LIGHT_BOUNCES 2
 #define AIR 1.0
 #define EPSILON .00001
+#define FIRST_GILL 20
+#define SECOND_GILL 10
+#define THICKNESS .1
 
-Camera::Camera(Vector3f _location, Vector3f _up, Vector3f _right, Vector3f _lookAt, int AA_res, bool jitter) :
+Camera::Camera(Vector3f _location, Vector3f _up, Vector3f _right, Vector3f _lookAt, int AA_res, bool jitter, bool gi, bool cartoon) :
     location(_location),
     up(_up),
     right(_right),
     lookAt(_lookAt),
     AA_res(AA_res),
-    jitter(jitter)
+    jitter(jitter),
+    gi(gi),
+    cartoon(cartoon)
 {
     rght = right.norm() / 2;
     left = -rght;
@@ -70,7 +75,7 @@ void Camera::castRays(shared_ptr<Window> window, shared_ptr<Scene> scene)
 
             // Cast ray to get pixel color 
             for (int k = 0; k < rays.size(); k++) {
-                shade = castRay(NULL, location, rays[k], scene, !UNIT_TEST, REFL_RECURSES, NULL, PRIMARY);
+                shade = castRay(NULL, location, rays[k], scene, !UNIT_TEST, REFL_RECURSES, NULL, PRIMARY, IND_LIGHT_BOUNCES);
                 color += shade.getColor();
             }
             
@@ -107,7 +112,7 @@ void Camera::unitTest(int i, int j, shared_ptr<Window> window, shared_ptr<Scene>
     // Generate ray direction from camera into scene
     vector<Vector3f> rays = calcRays(i, j, window);
     
-    Shade s = castRay(NULL, location, rays[0], scene, UNIT_TEST, REFL_RECURSES, log, PRIMARY);
+    Shade s = castRay(NULL, location, rays[0], scene, UNIT_TEST, REFL_RECURSES, log, PRIMARY, IND_LIGHT_BOUNCES);
 
     Tools::printVec3("Color", s.getColor());
     cout << "------------" << endl << endl;
@@ -171,7 +176,7 @@ vector<Vector3f> Camera::calcRays(int i, int j, shared_ptr<Window> window)
     return rays;
 }
 
-Shade Camera::castRay(shared_ptr<Object> avoid, const Vector3f& loc, const Vector3f& ray, shared_ptr<Scene> scene, bool unitTest, int iteration, shared_ptr<stack<PrintOut> > log, int type) {
+Shade Camera::castRay(shared_ptr<Object> avoid, const Vector3f& loc, const Vector3f& ray, shared_ptr<Scene> scene, bool unitTest, int iteration, shared_ptr<stack<PrintOut> > log, int type, int gillumiter) {
 
     // Fire ray into scene to detect objects
     HitRecord hitRecord = intersectRay(avoid, loc, ray, scene);
@@ -188,31 +193,53 @@ Shade Camera::castRay(shared_ptr<Object> avoid, const Vector3f& loc, const Vecto
 
         // Determine point in space which ray intersects object
         Vector3f hitPoint = loc + t * ray;
+        Vector3f normal = object->getNormal(hitPoint);
 
+        // Cartoon shading
+        if (cartoon) {
+            float d = normal.dot(-ray);
+            int id = object->getID();
+
+            if (id == Object::PLANE && d < -.5) {
+                return Shade();
+            } 
+            
+            if (id == Object::PLANE && d < 0 && d > -.5) {
+                return Shade();
+            }
+            
+            if (d < THICKNESS) {
+                Vector3f rgb = object->getRGB();
+                return Shade(rgb, rgb, rgb);
+                //return Shade(Vector3f(1.0,1.0,1.0), Vector3f(1.0,1.0,1.0), Vector3f(1.0,1.0,1.0));
+
+            }
+        }
+      
         if (!object->isRefractive()) {
 
             if (!object->isReflective()) {
                
-                color = calcLocal(scene, object, hitPoint);
+                color = calcLocal(scene, object, hitPoint, gillumiter);
                 
             } else {
+
+                Shade localColor = calcLocal(scene, object, hitPoint, gillumiter);
+                Shade reflectColor;
+                    
+                if (!calcReflection(scene, object, iteration, hitPoint,
+                                    ray, unitTest, log, &reflectColor, gillumiter)) {
+                    reflect = 0;
+                }
                 
-                    Shade localColor = calcLocal(scene, object, hitPoint);
-                    Shade reflectColor;
-                    
-                    if (!calcReflection(scene, object, iteration, hitPoint,
-                                        ray, unitTest, log, &reflectColor)) {
-                        reflect = 0;
-                    }
-                    
-                    localColor ^= (1 - reflect);
-                    reflectColor *= reflect;
-                    color = localColor + reflectColor;
+                localColor ^= (1 - reflect);
+                reflectColor *= reflect;
+                color = localColor + reflectColor;
             }
-        
+            
         } else {  
 
-            color = calcRefraction(scene, object, iteration, hitPoint, ray, unitTest, log);
+            color = calcRefraction(scene, object, iteration, hitPoint, ray, unitTest, log, gillumiter);
 
         }
      
@@ -251,11 +278,13 @@ bool Camera::isShadowed(shared_ptr<Scene> scene, shared_ptr<Light> light, shared
     return hitRecord.getObject() != NULL && (hitRecord.getT() * feeler).norm() < hit2Light.norm();
 }
 
-Shade Camera::calcLocal(shared_ptr<Scene> scene, shared_ptr<Object> object, const Vector3f& hitPoint)
-{
+Shade Camera::calcLocal(shared_ptr<Scene> scene, shared_ptr<Object> object, const Vector3f& hitPoint, int gillumiter)
+{   
     Vector3f ambient = Vector3f(0,0,0);
     Vector3f diffuse = Vector3f(0,0,0);
     Vector3f specular = Vector3f(0,0,0);
+
+    Vector3f normal = object->getNormal(hitPoint);
 
     // Iterate through lights in scene
     vector<shared_ptr<Light> > lights = scene->getLights();
@@ -267,15 +296,44 @@ Shade Camera::calcLocal(shared_ptr<Scene> scene, shared_ptr<Object> object, cons
             // Light vector
             Vector3f hit2Light = lights[i]->getPosition() - hitPoint;
             Vector3f feeler = hit2Light.normalized();
-            Vector3f normal = object->getNormal(hitPoint);
             
             diffuse += calcDiffuse(object, normal, feeler, lights[i]);
-            specular += calcSpecular(object, hitPoint, normal, feeler, lights[i]);
+            
+            //if (isBlinnPhong) {
+                specular += calcSpecular(object, hitPoint, normal, feeler, lights[i]);
+                /*} else {
+                float NdotV = normal.dot(-ray);
+                float NdotHNoClamp = N.dot(H);
+                float tmp1 = 2 * (NdotHNoClamp)*(NdotV) / (V.dot(H));
+                float tmp2 = 2 * (NdotHNoClamp)* (NdotL) / (V.dot(H));
+                float G = std::min(1.0f, std::min(tmp1, tmp2));
+
+                float F0 = ((1.0 - obj->getFinish().ior) / (1.0 + obj->getFinish().ior))
+                    * ((1.0 - obj->getFinish().ior) / (1.0 + obj->getFinish().ior));
+                float theta = acos(NdotV);
+                float F = F0 + (1 - F0) * std::pow(cos(theta), 5);
+
+                float a = acos(NdotHNoClamp);
+                float tan2a = tan(a) * tan(a);
+                float cos4a = cos(a) * cos(a) * cos(a) * cos(a);
+                float m = obj->getFinish().roughness;
+                float D = std::exp(-tan2a / (m*m)) / (M_PI * m*m*cos4a);
+
+                float kspec = D*F*G / (4 * NdotV * (N.dot(L)));
+
+                R += Lc(0) * kspec * Ks(0);
+                G += Lc(1) * kspec * Ks(1);
+                B += Lc(2) * kspec * Ks(2);
+                }*/
         } 
     }
     
-    ambient = calcAmbient(object);
-    
+    if (gi) {
+        ambient = calcMonteCarlo(scene, object, normal, hitPoint, gillumiter);
+    } else {
+        ambient = calcAmbient(object);
+    }
+
     // Local Color
     Shade s = Shade(ambient, diffuse, specular);
     s.clamp();
@@ -283,18 +341,22 @@ Shade Camera::calcLocal(shared_ptr<Scene> scene, shared_ptr<Object> object, cons
     return s; 
 }
 
-bool Camera::calcReflection(shared_ptr<Scene> scene, shared_ptr<Object> object, int iteration, const Vector3f& hitPoint, const Vector3f& ray, bool unitTest, shared_ptr<stack<PrintOut> > log, Shade *color)
+Shade blinnPhong()
+{
+}
+
+bool Camera::calcReflection(shared_ptr<Scene> scene, shared_ptr<Object> object, int iteration, const Vector3f& hitPoint, const Vector3f& ray, bool unitTest, shared_ptr<stack<PrintOut> > log, Shade *color, int gillumiter)
 {       
     Vector3f normal = object->getNormal(hitPoint);
     Vector3f reflRay = ray - 2*(ray.dot(normal))*normal;
     reflRay.normalize();
 
-    *color = castRay(object, hitPoint, reflRay, scene, unitTest, iteration - 1, log, REFLECT);
+    *color = castRay(object, hitPoint, reflRay, scene, unitTest, iteration - 1, log, REFLECT, gillumiter);
     
     return !color->isBlack() ? true : false;
 }
 
-Shade Camera::calcRefraction(shared_ptr<Scene> scene, shared_ptr<Object> object, int iteration, const Vector3f& hitPoint, const Vector3f& ray, bool unitTest, shared_ptr<stack<PrintOut> > log)
+Shade Camera::calcRefraction(shared_ptr<Scene> scene, shared_ptr<Object> object, int iteration, const Vector3f& hitPoint, const Vector3f& ray, bool unitTest, shared_ptr<stack<PrintOut> > log, int gillumiter)
 {
     Shade reflectColor;
     Shade refractColor;
@@ -311,7 +373,7 @@ Shade Camera::calcRefraction(shared_ptr<Scene> scene, shared_ptr<Object> object,
     float n1 = entering ? AIR : ior;
     float n2 = entering ? ior : AIR;
     
-    calcReflection(scene, object, iteration, hitPoint, ray, !UNIT_TEST, NULL, &reflectColor);
+    calcReflection(scene, object, iteration, hitPoint, ray, !UNIT_TEST, NULL, &reflectColor, gillumiter);
 
     if (entering) {
         
@@ -332,7 +394,7 @@ Shade Camera::calcRefraction(shared_ptr<Scene> scene, shared_ptr<Object> object,
     
     Vector3f newLoc = hitPoint + refractRay * EPSILON;
 
-    refractColor = castRay(NULL, newLoc, refractRay, scene, unitTest, iteration-1, log, REFRACT);
+    refractColor = castRay(NULL, newLoc, refractRay, scene, unitTest, iteration-1, log, REFRACT, gillumiter);
    
     float R0 = pow((n1 - n2) / (n1 + n2), 2);
     float R = R0 + (1 - R0) * pow(1-c, 5);
@@ -383,60 +445,82 @@ Vector3f Camera::calcSpecular(shared_ptr<Object> object, const Vector3f& hitPoin
     return Tools::mult2Vecs(object->getRGB() * object->getSpecular() * pow(normal.dot(half), 1 / object->getRoughness()), light->getColor());
 }
 
-Shade Camera::calcMonteCarlo(shared_ptr<Scene> scene, shared_ptr<Object> object, const Vector3f& normal, const Vector3f& hitPoint, int gillumiter)
+Vector3f Camera::calcMonteCarlo(shared_ptr<Scene> scene, shared_ptr<Object> object, const Vector3f& normal, const Vector3f& hitPoint, int gillumiter)
 {
     int numRays;
     
     if (gillumiter == IND_LIGHT_BOUNCES) {
-        numRays = 128;
+        numRays = FIRST_GILL;
     } else if (gillumiter == IND_LIGHT_BOUNCES - 1) {
-        numRays = 32;
+        numRays = SECOND_GILL;
     } else {
-        return Shade(calcAmbient(object), Vector3f(0,0,0), Vector3f(0,0,0));
+        return calcAmbient(object);
     }
     
     // Calc transform matrix
-    float angle = acos(normal.dot(Vector3f(0, 0, 1)));
-    Vector3f axis = normal.cross(Vector3f(0,0,1));
+    Vector3f zUnit = Vector3f(0,0,1);
+    float angle = acos(normal.dot(zUnit));
+    Vector3f axis = zUnit.cross(normal);
     Matrix3f R;
     R = AngleAxisf(angle, axis);
     
     float u1, u2;
 
-    Shade finalShade = Shade();
+    Vector3f ambient;
     
     for (int i = 0; i < numRays; i++) {
         
         u1 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
         u2 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-        float r = sqrt(1.0f - u1 * u1);
-        float phi = 2 * M_PI * u2;
-
-        Vector3f genRay = Vector3f(cos(phi) * r, sin(phi) * r, u1);
+        float r = sqrt(u1);
+        float theta = M_PI * u2;
+        float dx = r*cos(2.0*theta);
+        float dy = r*sin(theta);
+        float z = sqrt(max(0.0f, 1.0f - dx*dx - dy*dy));
+        Vector3f genRay = Vector3f(dx,dy,z);
         
         genRay = R * genRay;
-        Shade s = castRay(object, hitPoint, genRay, scene, !UNIT_TEST, REFL_RECURSES, NULL, GLOBAL_ILLUM);
+
+        if (genRay.dot(normal) < 0) {
+            cout << "gi ray is more than 90 deg off" << endl; 
+        }
+
+        Shade s = castRay(object, hitPoint, genRay, scene, !UNIT_TEST, REFL_RECURSES, NULL, GLOBAL_ILLUM, gillumiter-1);
+        Vector3f a = s.getColor();
         
-        finalShade = finalShade + s;
+        ambient += genRay.dot(normal)*a;
     }
+
+    ambient *= object->getAmbient();    
+    ambient /= numRays;
     
-    finalShade /= numRays;
-    
-    return finalShade;
+    return ambient;
 }
 
 // http://graphicrants.blogspot.com/2013/08/specular-brdf-reference.html
-/*Eigen::Vector3f CookTorrance(const Shape *hitShape, const Eigen::Vector3f &n, const Eigen::Vector3f &l, 
-                                        const Eigen::Vector3f &d, const Eigen::Vector3f &lightCol, 
-                                        double curIOR, double newIOR) {
-    Eigen::Vector3f v = -d;
-    Eigen::Vector3f h = (l + v).normalized();
-    float m = hitShape->finish.roughness;
+Eigen::Vector3f cookTorrance(shared_ptr<Object> object, const Vector3f& hitPoint, 
+                             const Vector3f& ray, shared_ptr<Light> light) {
+    
+    Vector3f l = light->getPosition();
+    Vector3f v = -ray;
+    Vector3f h = (l + v).normalized();
+    float m = object->getRoughness();
     v.normalize();
 
-    float NdotV= n.dot(v);
-    float NdotH= n.dot(h);
-    float NdotL= n.dot(l);
+    float ior = object->getIOR();
+
+    Vector3f normal = object->getNormal(hitPoint);
+
+    // Check whether ray is leaving or entering object
+    bool entering = ray.dot(normal) < 0 ? true : false;
+    
+    // Index of refraction setting
+    float n1 = entering ? AIR : ior;
+    float n2 = entering ? ior : AIR;
+
+    float NdotV= normal.dot(v);
+    float NdotH= normal.dot(h);
+    float NdotL= normal.dot(l);
     float VdotH= v.dot(h);
 
     // Calculate Cook-Torrance (G)
@@ -447,59 +531,24 @@ Shade Camera::calcMonteCarlo(shared_ptr<Scene> scene, shared_ptr<Object> object,
     // Calculate GGX (Trowbridge-Reitz) Distribution (D)
     double alpha = m*m;
     double alphaSqr = alpha*alpha;
-    double denom = PI*pow(((NdotH*NdotH)*(alphaSqr - 1) + 1), 2);
+    double denom = M_PI*pow(((NdotH*NdotH)*(alphaSqr - 1) + 1), 2);
     float Rough= alphaSqr/denom;
 
     // Calculate F
-    double r1 = curIOR; // index of refraction for the medium one (like Air,  which is 1)
-    double r2 = newIOR; // index of refraction for the medium two (like lead, which is 2)
-    float R0 = pow(((r1 - r2)/(r1 + r2)), 2);
+    float R0 = pow(((n1 - n2)/(n1 + n2)), 2);
     float Fresnel= R0 + (1.0 - R0)*pow(1.0 - VdotH, 5.0);   //schlick's approximation
 
     double ct = (Rough*Fresnel*Geom)/(4.0*NdotV*NdotL);
-    double spec = (hitShape->finish.specular)*ct;
 
-    // calculate diffuse
-    double dif = hitShape->finish.diffuse*max(0.0f, NdotL);
+    double spec = object->getSpecular()*ct;
+    double dif = object->getDiffuse()*max(0.0f, NdotL);
 
-    Eigen::Vector3f ret = hitShape->color.head<3>()*(dif + spec);
-    ret[0] *= lightCol[0];
-    ret[1] *= lightCol[1];
-    ret[2] *= lightCol[2];
+    Vector3f color = object->getRGB() * (dif + spec);
+    Vector3f lColor = light->getColor();
 
-    return ret;
+    color(0) *= lColor(0);
+    color(1) *= lColor(1);
+    color(2) *= lColor(2);
+
+    return color;
 }
-
-/*Eigen::Vector3f ToonSorta(const Shape *hitShape, const Eigen::Vector3f &n, const Eigen::Vector3f &l, 
-                                const Eigen::Vector3f &d, const Eigen::Vector3f &lightCol, 
-                                Eigen::Vector3f *retColor) {
-    Eigen::Vector3f baseColor = hitShape->color.head<3>();
-
-    if (-.1 < d.dot(n)) {
-        // we are at an edge and should color it black for outlining
-        *retColor = Eigen::Vector3f(0,0,0);
-        return Eigen::Vector3f(0,0,0);
-    }
-
-    // prepare what is need for blinn-phong
-    Eigen::Vector3f h = l + -d;
-    h.normalize();
-
-    // make diffuse
-    double ndl = max(0.0f, n.dot(l));
-    Eigen::Vector3f dif = baseColor*hitShape->finish.diffuse*ndl;
-    
-    // make specular
-    double hdn = h.dot(n);
-    double shine = (1.0f/hitShape->finish.roughness);
-    Eigen::Vector3f spec = (baseColor*hitShape->finish.specular)*pow(hdn, shine);
-
-    // add in light color
-    Eigen::Vector3f ret = dif + spec;
-
-    ret[0] *= lightCol[0];
-    ret[1] *= lightCol[1];
-    ret[2] *= lightCol[2];
-
-    return ret;
-    }*/

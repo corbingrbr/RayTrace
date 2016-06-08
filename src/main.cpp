@@ -67,8 +67,8 @@ void test()
 
 int main(int argc, char **argv)
 {
-    if (argc < 5 || argc >= 6) { 
-        cout << "Must supply width, height, input_file, and anti-aliasing (0/1)" << endl;
+    if (argc < 7 || argc >= 8) { 
+        cout << "Must supply width, height, input_file, AA, GI, CARTOON" << endl;
         return 0;
     }
 
@@ -76,11 +76,14 @@ int main(int argc, char **argv)
     int height = atoi(argv[2]);
     char *file = argv[3];
     int aa = atoi(argv[4]);
+    bool gi = atoi(argv[5]) == 1 ? true : false;
+    bool cartoon = atoi(argv[6]) == 1 ? true : false;
     
     window = make_shared<Window>(width, height);
     scene = make_shared<Scene>();
     
-    bool success = (aa == 1) ? Parse::parse(file, 3, JITTER) : Parse::parse(file, 1, !JITTER);
+    bool success = (aa == 1) ? Parse::parse(file, 3, JITTER, gi, cartoon) : 
+        Parse::parse(file, 1, !JITTER, gi, cartoon);
 
     if (JITTER) { srand(time(NULL)); } // Seed random number generator
 
