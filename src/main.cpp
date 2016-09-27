@@ -55,20 +55,11 @@ void writeImage(string povfile)
     window->genImage(image);
 }
 
-void test()
-{
-    Vector3f min = Vector3f(-1, -1, -1);
-    Vector3f max = Vector3f(1,1,1);
-    Vector3f eye = Vector3f(0, 0, 12);
-    Vector3f dir = Vector3f(0, 0, -1);
-    Box b = Box(min, max, make_shared<Pigment>(), make_shared<Finish>(), Matrix4f());
-    b.intersection(eye, dir);
-}
-
 int main(int argc, char **argv)
 {
-    if (argc < 5 || argc >= 6) { 
-        cout << "Must supply width, height, input_file, BRDF" << endl;
+ 
+    if (argc < 6 || argc >= 7) { 
+        cout << "Must supply width, height, input_file, BRDF, AA" << endl;
         return 0;
     }
 

@@ -1,8 +1,5 @@
 Name: Corbin Gruber
 
-Execution: ./raytrace width height resources/P4/filename.pov (0/1 AA)
+Execution: ./raytrace width height resources/P#/file.pov (0/1 BRDF) (0/1 AA)
 
 Images appear under "images" directory.
-
-
-The only thing this submission is lacking is proper transform of lighting, all other components should work.

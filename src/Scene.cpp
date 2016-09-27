@@ -65,7 +65,7 @@ void Scene::printObjects()
 
             objects[i]->print();
             cout << endl;
-    }
+    } 
 
     for (unsigned int i = 0; i < planes.size(); i++) {
         planes[i]->print();
@@ -103,8 +103,6 @@ HitRecord Scene::intersections(shared_ptr<Object> avoid, const Vector3f& p0, con
             object = planes[i];
         }
     }
-
-    // REFACTOR LATER
 
     if (!hitTree && best < 0) {
         

@@ -85,6 +85,8 @@ void Camera::castRays(shared_ptr<Window> window, shared_ptr<Scene> scene)
             // Set color of pixel
             window->setPixel(i, j, color);
         }
+        
+        // For progress bar demonstrating completion of render 
         completed += inc;
         n_hash = floor(completed);
         cout << "\rCasting rays ... " << "[" << 
@@ -99,9 +101,8 @@ void Camera::unitTests(shared_ptr<Window> window, shared_ptr<Scene> scene)
     cout << endl << endl;
     cout << "Running unit tests ..." << endl << endl;
 
-    //unitTest(399, 280, window, scene);
-    //unitTest(240, 280, window, scene);
-    unitTest(417, 303, window, scene);
+
+    unitTest(72, 80, window, scene);
 }
 
 void Camera::unitTest(int i, int j, shared_ptr<Window> window, shared_ptr<Scene> scene)
@@ -196,27 +197,6 @@ Shade Camera::castRay(shared_ptr<Object> avoid, const Vector3f& loc, const Vecto
         Vector3f hitPoint = loc + t * ray;
         Vector3f normal = object->getNormal(hitPoint);
 
-        // Cartoon shading
-        /*if (cartoon) {
-            float d = normal.dot(-ray);
-            int id = object->getID();
-
-            if (id == Object::PLANE && d < -.5) {
-                return Shade();
-            } 
-            
-            if (id == Object::PLANE && d < 0 && d > -.5) {
-                return Shade();
-            }
-            
-            if (d < THICKNESS) {
-                Vector3f rgb = object->getRGB();
-                return Shade(rgb, rgb, rgb);
-                //return Shade(Vector3f(1.0,1.0,1.0), Vector3f(1.0,1.0,1.0), Vector3f(1.0,1.0,1.0));
-
-            }
-            }*/
-      
         if (!object->isRefractive()) {
 
             if (!object->isReflective()) {
@@ -324,10 +304,14 @@ Shade Camera::calcLocal(shared_ptr<Scene> scene, shared_ptr<Object> object, cons
 bool Camera::calcReflection(shared_ptr<Scene> scene, shared_ptr<Object> object, int iteration, const Vector3f& hitPoint, const Vector3f& ray, bool unitTest, shared_ptr<stack<PrintOut> > log, Shade *color, int gillumiter)
 {       
     Vector3f normal = object->getNormal(hitPoint);
+    Vector3f hp;
+    Vector3f n = normal * .000001;
+    hp << hitPoint(0) + n(0), hitPoint(1) + n(1), hitPoint(2) + n(2); 
+    
     Vector3f reflRay = ray - 2*(ray.dot(normal))*normal;
     reflRay.normalize();
 
-    *color = castRay(object, hitPoint, reflRay, scene, unitTest, iteration - 1, log, REFLECT, gillumiter);
+    *color = castRay(object, hp, reflRay, scene, unitTest, iteration - 1, log, REFLECT, gillumiter);
     
     return !color->isBlack() ? true : false;
 }
@@ -372,13 +356,17 @@ Shade Camera::calcRefraction(shared_ptr<Scene> scene, shared_ptr<Object> object,
 
     refractColor = castRay(NULL, newLoc, refractRay, scene, unitTest, iteration-1, log, REFRACT, gillumiter);
    
-    float R0 = pow((n1 - n2) / (n1 + n2), 2);
+    /*float R0 = pow((n1 - n2) / (n1 + n2), 2);
     float R = R0 + (1 - R0) * pow(1-c, 5);
 
     refractColor *= (1 - R);
-    reflectColor *= R;
+    reflectColor *= R;*/
     
+    reflectColor *= 1 - object->getFilter();
+    refractColor *= object->getFilter();
+
     Shade color = refractColor + reflectColor;
+
     color.clamp();
  
     return color;

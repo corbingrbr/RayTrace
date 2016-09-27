@@ -24,7 +24,7 @@ Sphere::~Sphere()
 }
 
 float Sphere::intersection(const Vector3f& e, const Vector3f& d)
-{
+{   
     // Check discriminant first
     float discriminant = sqrt(pow(d.dot(e-position), 2) - d.dot(d) * ((e-position).dot(e-position) - radius * radius));
     
@@ -51,14 +51,13 @@ float Sphere::intersection(const Vector3f& e, const Vector3f& d)
     }  
 }
 
+// Expecting this to provide normal for world, hitPoint is assumed world
 Vector3f Sphere::getNormal(const Vector3f& hitPoint)
 {
     Vector4f hp = invXForm * Vector4f(hitPoint(X), hitPoint(Y), hitPoint(Z), 1);
     Vector4f normal = hp - Vector4f(position(X), position(Y), position(Z), 1);
     normal.normalize();
-    normal = invXForm.transpose() * normal;
-    normal.normalize();
-
+    
     return normal.head(3);
 }
 

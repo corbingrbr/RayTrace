@@ -60,9 +60,9 @@ void PrintOut::print()
         Tools::printVec3("Location", location);
         Tools::printVec3("Ray", ray);
         Tools::printFloat("T", t);
-        Tools::printVec3("Ambient", ambient);
-        Tools::printVec3("Diffuse", diffuse);
-        Tools::printVec3("Specular", specular);
+        //Tools::printVec3("Ambient", ambient);
+        //Tools::printVec3("Diffuse", diffuse);
+        //Tools::printVec3("Specular", specular);
 
     } else {
         

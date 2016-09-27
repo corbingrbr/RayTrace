@@ -45,7 +45,7 @@ float Box::intersection(const Vector3f& e, const Vector3f& d)
       tgmax = tmax < tgmax ? tmax : tgmax;
 
       if (tgmin > tgmax) {
-         return -1.0;
+          return -1.0;
       }
    }
 
@@ -57,7 +57,6 @@ float Box::intersection(const Vector3f& e, const Vector3f& d)
       if (tgmax > 0) {
          return tgmax;
       }
-      
       return tgmax;
    }
    return tgmin;   
@@ -68,21 +67,27 @@ Vector3f Box::getNormal(const Vector3f& hitPoint)
 {
     Vector4f hp = invXForm * Vector4f(hitPoint(X), hitPoint(Y), hitPoint(Z), 1);
     
-    float epsilon = .0001;
-   
+    float epsilon = .00001;
+
     Vector4f normal;
-    
-    if (hp(X) > min(X) - epsilon && hp(X) <= min(X)) { 
+
+    if (hp(X) > min(X) - epsilon && hp(X) <= min(X) + epsilon) { 
+        //cout << "here 1" << endl;
         normal = Vector4f(-1, 0, 0, 0);
-    } else if (hp(X) < max(X) + epsilon && hp(X) >= max(X)) { 
+    } else if (hp(X) < max(X) + epsilon && hp(X) >= max(X) - epsilon) { 
+        //cout << "here 2" << endl;
         normal = Vector4f(1, 0, 0, 0); 
-    } else if (hp(Y) > min(Y) - epsilon && hp(Y) <= min(Y)) { 
+    } else if (hp(Y) > min(Y) - epsilon && hp(Y) <= min(Y) + epsilon) { 
+        //cout << "here 3" << endl;
         normal = Vector4f(0, 1, 0, 0); 
-    } else if (hp(Y) < max(Y) + epsilon && hp(Y) >= max(Y)) {
+    } else if (hp(Y) < max(Y) + epsilon && hp(Y) >= max(Y) - epsilon) {
+        //cout << "here 4" << endl;
         normal = Vector4f(0, -1, 0, 0); 
-    } else if (hp(Z) > min(Z) - epsilon && hp(Z) <= min(Z)) { 
+    } else if (hp(Z) > min(Z) - epsilon && hp(Z) <= min(Z) + epsilon) { 
+        //cout << "here 5" << endl;
         normal = Vector4f(0, 0, -1, 0);
     } else { 
+        //cout << "here 6" << endl;
         normal = Vector4f(0, 0, 1, 0); 
     }
     

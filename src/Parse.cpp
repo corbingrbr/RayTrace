@@ -287,7 +287,6 @@ shared_ptr<Box> Parse::parseBox()
     getToken();
     
     while (token != "}") {
-        
         if (token == "scale") {
             xform = scale(parseVector3f()) * xform;
         } else if (token == "rotate") {
@@ -379,7 +378,7 @@ Vector3f Parse::parseVector3f()
 
     ss >> s;
     z = atof(s.c_str());
-    
+
     return Vector3f(x,y,z);
 }
 
@@ -402,7 +401,7 @@ Vector4f Parse::parseVector4f()
 
     ss >> s;
     w = atof(s.c_str());
-    
+
     return Vector4f(x,y,z,w);
 }
 
